@@ -56,15 +56,17 @@ Attendance Percentage = (Classes Attended / Total Classes Conducted) × 100
 If a student has attended 30 out of 35 classes (85.7% attendance):
 - **Current Status**: Eligible ✓
 - **Classes can miss**: Calculate maximum missable classes while maintaining 75%
-- **Formula**: `(Classes Attended - 0.75 × Total Classes) / 0.75`
-- **Example**: Student can miss up to 5 more classes and still maintain 75%
+- **Formula**: `floor((Classes Attended / 0.75) - Total Classes)`
+- **Example**: `floor((30 / 0.75) - 35) = floor(40 - 35) = 5`
+  - Student can miss up to 5 more classes: 30/(35+5) = 30/40 = 75%
 
 #### Scenario 2: Current Attendance Below 75%
 If a student has attended 20 out of 35 classes (57.1% attendance):
 - **Current Status**: Not Eligible ✗
 - **Classes must attend**: Calculate required consecutive attendance to reach 75%
-- **Formula**: `(0.75 × Total Classes - Classes Attended) / 0.25`
-- **Example**: Student must attend next 20 consecutive classes to reach 75%
+- **Formula**: `ceil((0.75 × Total Classes - Classes Attended) / 0.25)`
+- **Example**: `ceil((0.75 × 35 - 20) / 0.25) = ceil(6.25 / 0.25) = ceil(25) = 25`
+  - Student must attend next 25 consecutive classes: 45/60 = 75%
 
 ### Factors Considered
 
@@ -202,9 +204,9 @@ SOURCE database/schema.sql;
 4. Update database credentials in configuration file:
 ```java
 // src/config/DatabaseConfig.java
-DB_URL = "jdbc:mysql://localhost:3306/attendance_system"
-DB_USER = "your_username"
-DB_PASSWORD = "your_password"
+private static final String DB_URL = "jdbc:mysql://localhost:3306/attendance_system";
+private static final String DB_USER = "your_username";
+private static final String DB_PASSWORD = "your_password";
 ```
 
 ### Step 3: Compile the Project
