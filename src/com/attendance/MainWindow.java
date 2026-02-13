@@ -204,17 +204,30 @@ public class MainWindow extends JFrame {
         JPanel actionsPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
         actionsPanel.setOpaque(false);
 
+        // Date Picker
+        JSpinner dateSpinner = new JSpinner(new SpinnerDateModel());
+        JSpinner.DateEditor dateEditor = new JSpinner.DateEditor(dateSpinner, "dd/MM/yyyy");
+        dateSpinner.setEditor(dateEditor);
+        dateSpinner.setToolTipText("Select Date for Attendance");
+        actionsPanel.add(dateSpinner);
+
         JButton attendedBtn = new JButton("Attended");
         attendedBtn.setBackground(new Color(230, 255, 230));
         attendedBtn.addActionListener(e -> {
-            subject.addClass(true);
+            java.util.Date selectedDate = (java.util.Date) dateSpinner.getValue();
+            java.time.LocalDate localDate = selectedDate.toInstant().atZone(java.time.ZoneId.systemDefault())
+                    .toLocalDate();
+            subject.addClass(localDate, true);
             refreshDashboard();
         });
 
         JButton missedBtn = new JButton("Missed");
         missedBtn.setBackground(new Color(255, 230, 230));
         missedBtn.addActionListener(e -> {
-            subject.addClass(false);
+            java.util.Date selectedDate = (java.util.Date) dateSpinner.getValue();
+            java.time.LocalDate localDate = selectedDate.toInstant().atZone(java.time.ZoneId.systemDefault())
+                    .toLocalDate();
+            subject.addClass(localDate, false);
             refreshDashboard();
         });
 
