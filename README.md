@@ -178,8 +178,7 @@ This project demonstrates proficiency in key Java concepts typically covered in 
 ### Prerequisites
 - Java Development Kit (JDK) 8 or higher
 - MySQL Server 8.0 or higher
-- IDE: IntelliJ IDEA, Eclipse, or NetBeans (optional)
-- Git for version control
+- MySQL Connector/J JAR (included in `lib/` folder)
 
 ### Step 1: Clone the Repository
 ```bash
@@ -189,63 +188,57 @@ cd Attendance-Eligibility-Management-System-JAVA-
 
 ### Step 2: Database Setup
 1. Start MySQL server
-2. Create a new database:
-```sql
-CREATE DATABASE attendance_system;
-USE attendance_system;
+2. Log in and create the database:
+```bash
+mysql -u root -p
 ```
-
-3. Run the SQL script to create tables:
 ```sql
--- Create tables (script should be provided in /database/schema.sql)
-SOURCE database/schema.sql;
+CREATE DATABASE IF NOT EXISTS attendance_system;
 ```
+> **Note:** Tables are auto-created by the app on first launch.
 
-4. Update database credentials in configuration file:
+3. Update credentials in `src/com/attendance/DatabaseConfig.java` if needed:
 ```java
-// src/config/DatabaseConfig.java
-private static final String DB_URL = "jdbc:mysql://localhost:3306/attendance_system";
-private static final String DB_USER = "your_username";
-private static final String DB_PASSWORD = "your_password";
+public static final String DB_URL = "jdbc:mysql://localhost:3306/attendance_system";
+public static final String DB_USER = "root";
+public static final String DB_PASSWORD = "your_password";
 ```
 
-### Step 3: Compile the Project
+### Step 3: Compile & Run (Terminal)
 
-#### Using Command Line:
+#### macOS / Linux:
 ```bash
-# Compile all Java files
-javac -d bin -sourcepath src src/**/*.java
+# Compile
+javac -cp "lib/mysql-connector-j-9.1.0.jar:src" -d out src/com/attendance/*.java
 
-# If using external JARs (MySQL Connector)
-javac -cp "lib/*" -d bin -sourcepath src src/**/*.java
+# Run
+java -cp "lib/mysql-connector-j-9.1.0.jar:out" com.attendance.AttendanceApp
 ```
 
-#### Using IDE:
+#### Windows (CMD):
+```cmd
+:: Compile
+javac -cp "lib\mysql-connector-j-9.1.0.jar;src" -d out src\com\attendance\*.java
+
+:: Run
+java -cp "lib\mysql-connector-j-9.1.0.jar;out" com.attendance.AttendanceApp
+```
+
+#### One-liner (macOS / Linux):
+```bash
+javac -cp "lib/mysql-connector-j-9.1.0.jar:src" -d out src/com/attendance/*.java && java -cp "lib/mysql-connector-j-9.1.0.jar:out" com.attendance.AttendanceApp
+```
+
+### Step 4: Using an IDE
 - Import the project as a Java project
-- Add MySQL Connector JAR to build path
-- Build the project (Ctrl+B / Cmd+B)
+- Add `lib/mysql-connector-j-9.1.0.jar` to the build path
+- Set `com.attendance.AttendanceApp` as the main class
+- Build and run
 
-### Step 4: Run the Application
-
-#### Using Command Line:
-```bash
-# Run main class
-java -cp "bin:lib/*" com.attendance.Main
-
-# On Windows
-java -cp "bin;lib/*" com.attendance.Main
-```
-
-#### Using IDE:
-- Locate the main class (e.g., `Main.java` or `AttendanceApp.java`)
-- Right-click and select "Run"
-
-### Step 5: Default Login Credentials
-```
-Username: admin
-Password: admin123
-```
-(Change these after first login)
+### Step 5: First Launch
+- On first launch, you'll see the **Login** screen
+- Click the **Register** tab to create a new account
+- After logging in, configure your **Semester Settings** when prompted
 
 ### Troubleshooting
 
