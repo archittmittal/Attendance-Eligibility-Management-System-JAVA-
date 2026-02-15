@@ -362,11 +362,44 @@ public class DatabaseManager {
 
     /**
      * Bulk save attendance records (for setting initial data).
+     * Places records ONLY on scheduled weekdays, starting from semester start
+     * date,
+     * skipping holidays and mid-sem exam periods.
      */
-    public void saveInitialAttendance(int subjectId, int conducted, int attended) {
+    public void saveInitialAttendance(int subjectId, int conducted, int attended,
+            List<java.time.DayOfWeek> scheduledDays, Student student) {
         // Clear existing records first
         String deleteSql = "DELETE FROM attendance_records WHERE subject_id = ?";
         String insertSql = "INSERT INTO attendance_records (subject_id, record_date, is_present) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE is_present = VALUES(is_present)";
+
+        // Determine start date: semester start or fallback to today minus a safe window
+        LocalDate startDate;
+        if (student != null && student.getSemesterStartDate() != null) {
+            startDate = student.getSemesterStartDate();
+        } else {
+            // Fallback: go back enough days to fit all conducted classes
+            startDate = LocalDate.now().minusDays((long) conducted * 7 / Math.max(scheduledDays.size(), 1) + 14);
+        }
+
+        // Collect valid class dates from startDate to today on scheduled weekdays only
+        List<LocalDate> validDates = new ArrayList<>();
+        LocalDate cursor = startDate;
+        LocalDate today = LocalDate.now();
+        List<LocalDate> holidayDates = (student != null) ? student.getHolidayDates() : new ArrayList<>();
+
+        while (!cursor.isAfter(today) && validDates.size() < conducted) {
+            // Only on scheduled weekdays
+            if (scheduledDays.contains(cursor.getDayOfWeek())) {
+                // Skip holidays
+                if (!holidayDates.contains(cursor)) {
+                    // Skip mid-sem exam period
+                    if (student == null || !student.isDuringMidsemExams(cursor)) {
+                        validDates.add(cursor);
+                    }
+                }
+            }
+            cursor = cursor.plusDays(1);
+        }
 
         try (Connection conn = getConnection()) {
             conn.setAutoCommit(false); // Transaction
@@ -377,18 +410,11 @@ public class DatabaseManager {
             }
 
             try (PreparedStatement insertStmt = conn.prepareStatement(insertSql)) {
-                // Add attended records
-                for (int i = 0; i < attended; i++) {
+                // First 'attended' dates are present, rest are absent
+                for (int i = 0; i < validDates.size(); i++) {
                     insertStmt.setInt(1, subjectId);
-                    insertStmt.setDate(2, Date.valueOf(LocalDate.now().minusDays(conducted - i)));
-                    insertStmt.setBoolean(3, true);
-                    insertStmt.addBatch();
-                }
-                // Add missed records
-                for (int i = 0; i < (conducted - attended); i++) {
-                    insertStmt.setInt(1, subjectId);
-                    insertStmt.setDate(2, Date.valueOf(LocalDate.now().minusDays(i + 1 + attended)));
-                    insertStmt.setBoolean(3, false);
+                    insertStmt.setDate(2, Date.valueOf(validDates.get(i)));
+                    insertStmt.setBoolean(3, i < attended); // first N are present
                     insertStmt.addBatch();
                 }
                 insertStmt.executeBatch();
@@ -423,6 +449,33 @@ public class DatabaseManager {
     }
 
     /**
+     * Add a group holiday (date range) for a student.
+     * Inserts one row per date from 'fromDate' to 'toDate' (inclusive) with the
+     * same description.
+     */
+    public void addHolidayRange(int studentId, LocalDate fromDate, LocalDate toDate, String description) {
+        String sql = "INSERT INTO holidays (student_id, holiday_date, description) VALUES (?, ?, ?) "
+                + "ON DUPLICATE KEY UPDATE description = ?";
+        try (Connection conn = getConnection();
+                PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            conn.setAutoCommit(false);
+            LocalDate current = fromDate;
+            while (!current.isAfter(toDate)) {
+                pstmt.setInt(1, studentId);
+                pstmt.setDate(2, Date.valueOf(current));
+                pstmt.setString(3, description);
+                pstmt.setString(4, description);
+                pstmt.addBatch();
+                current = current.plusDays(1);
+            }
+            pstmt.executeBatch();
+            conn.commit();
+        } catch (SQLException e) {
+            System.err.println("Error adding holiday range: " + e.getMessage());
+        }
+    }
+
+    /**
      * Remove a holiday.
      */
     public void removeHoliday(int studentId, LocalDate date) {
@@ -438,17 +491,34 @@ public class DatabaseManager {
     }
 
     /**
-     * Load all holidays for a student.
+     * Remove all holidays with a given description (group removal).
      */
-    public List<LocalDate> loadHolidays(int studentId) {
-        List<LocalDate> holidays = new ArrayList<>();
-        String sql = "SELECT holiday_date FROM holidays WHERE student_id = ? ORDER BY holiday_date";
+    public void removeHolidaysByDescription(int studentId, String description) {
+        String sql = "DELETE FROM holidays WHERE student_id = ? AND description = ?";
+        try (Connection conn = getConnection();
+                PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setInt(1, studentId);
+            pstmt.setString(2, description);
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            System.err.println("Error removing holidays by description: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Load all holidays for a student (with descriptions).
+     */
+    public List<Holiday> loadHolidays(int studentId) {
+        List<Holiday> holidays = new ArrayList<>();
+        String sql = "SELECT holiday_date, description FROM holidays WHERE student_id = ? ORDER BY holiday_date";
         try (Connection conn = getConnection();
                 PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setInt(1, studentId);
             try (ResultSet rs = pstmt.executeQuery()) {
                 while (rs.next()) {
-                    holidays.add(rs.getDate("holiday_date").toLocalDate());
+                    LocalDate date = rs.getDate("holiday_date").toLocalDate();
+                    String desc = rs.getString("description");
+                    holidays.add(new Holiday(date, desc));
                 }
             }
         } catch (SQLException e) {

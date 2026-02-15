@@ -93,18 +93,41 @@ public class Subject {
 
     /**
      * Set initial attendance data (bulk, for starting mid-semester).
+     * Places records only on scheduled weekdays from the semester start date,
+     * skipping holidays and midsem periods.
      */
-    public void setAttendance(int conducted, int attended) {
+    public void setAttendance(int conducted, int attended,
+            java.util.List<java.time.DayOfWeek> scheduledDays, java.time.LocalDate semesterStart,
+            java.util.List<java.time.LocalDate> holidayDates,
+            java.util.function.Predicate<java.time.LocalDate> isMidsemExam) {
         if (attended > conducted) {
             throw new IllegalArgumentException("Attended classes cannot be more than conducted classes.");
         }
         attendanceHistory.clear();
 
-        for (int i = 0; i < attended; i++) {
-            attendanceHistory.add(new AttendanceRecord(LocalDate.now().minusDays(conducted - i), true));
+        // Determine start date
+        java.time.LocalDate startDate = (semesterStart != null) ? semesterStart
+                : java.time.LocalDate.now().minusDays((long) conducted * 7 / Math.max(scheduledDays.size(), 1) + 14);
+        java.time.LocalDate today = java.time.LocalDate.now();
+
+        // Collect valid class dates
+        java.util.List<java.time.LocalDate> validDates = new java.util.ArrayList<>();
+        java.time.LocalDate cursor = startDate;
+
+        while (!cursor.isAfter(today) && validDates.size() < conducted) {
+            if (scheduledDays.contains(cursor.getDayOfWeek())) {
+                if (holidayDates == null || !holidayDates.contains(cursor)) {
+                    if (isMidsemExam == null || !isMidsemExam.test(cursor)) {
+                        validDates.add(cursor);
+                    }
+                }
+            }
+            cursor = cursor.plusDays(1);
         }
-        for (int i = 0; i < (conducted - attended); i++) {
-            attendanceHistory.add(new AttendanceRecord(LocalDate.now().minusDays(i + 1), false));
+
+        // First 'attended' are present, rest are absent
+        for (int i = 0; i < validDates.size(); i++) {
+            attendanceHistory.add(new AttendanceRecord(validDates.get(i), i < attended));
         }
     }
 

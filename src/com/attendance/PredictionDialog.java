@@ -138,7 +138,7 @@ public class PredictionDialog extends JDialog {
             }
 
             long leaveDays = ChronoUnit.DAYS.between(start, end) + 1;
-            List<LocalDate> holidays = student.getHolidays();
+            List<LocalDate> holidays = student.getHolidayDates();
             LocalDate semEnd = student.getSemesterEndDate();
             boolean hasSemDates = student.isSemesterConfigured() && semEnd != null && semEnd.isAfter(LocalDate.now());
 

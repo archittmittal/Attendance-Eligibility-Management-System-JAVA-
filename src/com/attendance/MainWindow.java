@@ -265,7 +265,7 @@ public class MainWindow extends JFrame {
 
         if (student.isSemesterConfigured() && student.getSemesterEndDate().isAfter(LocalDate.now())) {
             int remaining = AttendanceCalculator.calculateRemainingClasses(
-                    subject, schedule, student.getSemesterEndDate(), student.getHolidays(), student);
+                    subject, schedule, student.getSemesterEndDate(), student.getHolidayDates(), student);
             double maxPossible = AttendanceCalculator.calculateMaxPossibleAttendance(subject, remaining);
 
             if (pct >= 75) {
@@ -610,8 +610,11 @@ public class MainWindow extends JFrame {
 
             // Set initial attendance
             if (conducted > 0) {
-                newSubject.setAttendance(conducted, attended);
-                DatabaseManager.getInstance().saveInitialAttendance(subjectId, conducted, attended);
+                newSubject.setAttendance(conducted, attended,
+                        selectedDays, student.getSemesterStartDate(),
+                        student.getHolidayDates(), student::isDuringMidsemExams);
+                DatabaseManager.getInstance().saveInitialAttendance(
+                        subjectId, conducted, attended, selectedDays, student);
             }
 
             // Add to student

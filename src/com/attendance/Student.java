@@ -13,7 +13,7 @@ public class Student {
     private String name;
     private String username;
     private List<Subject> subjects;
-    private List<LocalDate> holidays;
+    private List<Holiday> holidays;
 
     // Semester date fields (4 dates for accurate calculation)
     private LocalDate semesterStartDate;
@@ -64,22 +64,42 @@ public class Student {
     }
 
     // ── Holidays ──
-    public void addHoliday(LocalDate date) {
-        if (!holidays.contains(date)) {
-            holidays.add(date);
+    public void addHoliday(Holiday holiday) {
+        if (!holidays.contains(holiday)) {
+            holidays.add(holiday);
         }
     }
 
-    public void removeHoliday(LocalDate date) {
-        holidays.remove(date);
+    public void removeHoliday(Holiday holiday) {
+        holidays.remove(holiday);
     }
 
-    public List<LocalDate> getHolidays() {
+    public void removeHolidayByDate(LocalDate date) {
+        holidays.removeIf(h -> h.getDate().equals(date));
+    }
+
+    public void removeHolidaysByDescription(String description) {
+        holidays.removeIf(h -> h.getDescription().equals(description));
+    }
+
+    public List<Holiday> getHolidays() {
         return holidays;
     }
 
-    public void setHolidays(List<LocalDate> holidays) {
+    public void setHolidays(List<Holiday> holidays) {
         this.holidays = holidays;
+    }
+
+    /**
+     * Convenience method: returns just the dates for backward compatibility
+     * with AttendanceCalculator, PredictionDialog, etc.
+     */
+    public List<LocalDate> getHolidayDates() {
+        List<LocalDate> dates = new ArrayList<>();
+        for (Holiday h : holidays) {
+            dates.add(h.getDate());
+        }
+        return dates;
     }
 
     // ── Semester Dates ──
