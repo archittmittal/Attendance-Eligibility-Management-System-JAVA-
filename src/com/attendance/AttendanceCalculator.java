@@ -69,7 +69,7 @@ public class AttendanceCalculator {
         LocalDate current = startDate;
         while (!current.isAfter(endDate)) {
             // Skip holidays and mid-sem exam periods
-            if (!student.getHolidays().contains(current) && !student.isDuringMidsemExams(current)) {
+            if (!student.getHolidayDates().contains(current) && !student.isDuringMidsemExams(current)) {
                 DayOfWeek day = current.getDayOfWeek();
                 List<Subject> subjectsToday = schedule.getSubjectsOn(day);
                 if (subjectsToday != null) {
