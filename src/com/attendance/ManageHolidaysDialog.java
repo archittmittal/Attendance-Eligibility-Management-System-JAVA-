@@ -153,6 +153,7 @@ public class ManageHolidaysDialog extends JDialog {
                     DatabaseManager.getInstance().addHoliday(student.getId(), date, description);
                     loadHolidays();
                     fromField.setText("");
+                    descField.setText("Official Holiday");
                 }
             } catch (DateTimeParseException ex) {
                 JOptionPane.showMessageDialog(this, "Invalid date format. Use YYYY-MM-DD.");
@@ -201,6 +202,7 @@ public class ManageHolidaysDialog extends JDialog {
                     loadHolidays();
                     fromField.setText("");
                     toField.setText("");
+                    descField.setText("Official Holiday");
                     JOptionPane.showMessageDialog(this,
                             days + " holidays added for \"" + description + "\"!",
                             "Group Holiday Added", JOptionPane.INFORMATION_MESSAGE);
