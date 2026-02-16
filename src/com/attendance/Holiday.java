@@ -23,6 +23,14 @@ public class Holiday {
         return description;
     }
 
+    public void setDate(LocalDate date) {
+        this.date = date;
+    }
+
+    public void setDescription(String description) {
+        this.description = (description != null && !description.isEmpty()) ? description : "Official Holiday";
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o)

@@ -506,6 +506,23 @@ public class DatabaseManager {
     }
 
     /**
+     * Update a holiday's date and/or description.
+     */
+    public void updateHoliday(int studentId, LocalDate oldDate, LocalDate newDate, String newDescription) {
+        String sql = "UPDATE holidays SET holiday_date = ?, description = ? WHERE student_id = ? AND holiday_date = ?";
+        try (Connection conn = getConnection();
+                PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setDate(1, Date.valueOf(newDate));
+            pstmt.setString(2, newDescription);
+            pstmt.setInt(3, studentId);
+            pstmt.setDate(4, Date.valueOf(oldDate));
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            System.err.println("Error updating holiday: " + e.getMessage());
+        }
+    }
+
+    /**
      * Load all holidays for a student (with descriptions).
      */
     public List<Holiday> loadHolidays(int studentId) {

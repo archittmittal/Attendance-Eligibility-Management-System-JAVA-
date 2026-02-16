@@ -82,6 +82,16 @@ public class Student {
         holidays.removeIf(h -> h.getDescription().equals(description));
     }
 
+    public void updateHoliday(LocalDate oldDate, LocalDate newDate, String newDescription) {
+        for (Holiday h : holidays) {
+            if (h.getDate().equals(oldDate)) {
+                h.setDate(newDate);
+                h.setDescription(newDescription);
+                break;
+            }
+        }
+    }
+
     public List<Holiday> getHolidays() {
         return holidays;
     }
