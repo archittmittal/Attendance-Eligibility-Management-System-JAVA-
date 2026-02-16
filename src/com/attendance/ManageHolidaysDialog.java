@@ -112,16 +112,19 @@ public class ManageHolidaysDialog extends JDialog {
 
         JButton addSingleBtn = createButton("+ Add Holiday", SUCCESS_COLOR);
         JButton addGroupBtn = createButton("+ Add Group Holiday", ACCENT_COLOR);
+        JButton editBtn = createButton("✏ Edit Selected", new Color(180, 190, 254));
         JButton removeBtn = createButton("Remove Selected", ERROR_COLOR);
         JButton removeGroupBtn = createButton("Remove Group", WARN_COLOR);
 
         addSingleBtn.setToolTipText("Add a single-day holiday with the given description");
         addGroupBtn.setToolTipText("Add holidays for every date from 'From' to 'To' with the same description");
+        editBtn.setToolTipText("Edit the date or description of the selected holiday");
         removeBtn.setToolTipText("Remove just the selected holiday row");
         removeGroupBtn.setToolTipText("Remove ALL holidays with the same description as the selected row");
 
         btnRow.add(addSingleBtn);
         btnRow.add(addGroupBtn);
+        btnRow.add(editBtn);
         btnRow.add(removeBtn);
         btnRow.add(removeGroupBtn);
         inputPanel.add(btnRow);
@@ -209,6 +212,61 @@ public class ManageHolidaysDialog extends JDialog {
                 }
             } catch (DateTimeParseException ex) {
                 JOptionPane.showMessageDialog(this, "Invalid date format. Use YYYY-MM-DD.");
+            }
+        });
+
+        // Edit Selected Holiday
+        editBtn.addActionListener(e -> {
+            int row = table.getSelectedRow();
+            if (row < 0) {
+                JOptionPane.showMessageDialog(this, "Select a holiday to edit.");
+                return;
+            }
+
+            String oldDateStr = (String) tableModel.getValueAt(row, 0);
+            String oldDesc = (String) tableModel.getValueAt(row, 2);
+            LocalDate oldDate = LocalDate.parse(oldDateStr);
+
+            // Build edit panel
+            JPanel editPanel = new JPanel(new GridLayout(2, 2, 8, 8));
+            editPanel.setBackground(CARD_COLOR);
+
+            JLabel dateLbl = new JLabel("Date (YYYY-MM-DD):");
+            dateLbl.setForeground(TEXT_COLOR);
+            JTextField dateInput = new JTextField(oldDateStr);
+
+            JLabel descLbl = new JLabel("Description:");
+            descLbl.setForeground(TEXT_COLOR);
+            JTextField descInput = new JTextField(oldDesc);
+
+            editPanel.add(dateLbl);
+            editPanel.add(dateInput);
+            editPanel.add(descLbl);
+            editPanel.add(descInput);
+
+            int result = JOptionPane.showConfirmDialog(this, editPanel,
+                    "Edit Holiday", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
+
+            if (result == JOptionPane.OK_OPTION) {
+                try {
+                    LocalDate newDate = LocalDate.parse(dateInput.getText().trim());
+                    String newDesc = descInput.getText().trim();
+                    if (newDesc.isEmpty())
+                        newDesc = "Official Holiday";
+
+                    // Check for duplicate date (only if date changed)
+                    if (!newDate.equals(oldDate) && student.getHolidayDates().contains(newDate)) {
+                        JOptionPane.showMessageDialog(this,
+                                "A holiday already exists on " + newDate + ".");
+                        return;
+                    }
+
+                    student.updateHoliday(oldDate, newDate, newDesc);
+                    DatabaseManager.getInstance().updateHoliday(student.getId(), oldDate, newDate, newDesc);
+                    loadHolidays();
+                } catch (DateTimeParseException ex) {
+                    JOptionPane.showMessageDialog(this, "Invalid date format. Use YYYY-MM-DD.");
+                }
             }
         });
 
