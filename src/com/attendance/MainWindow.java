@@ -70,10 +70,39 @@ public class MainWindow extends JFrame {
         addSubjectBtn.setBorder(BorderFactory.createEmptyBorder(8, 16, 8, 16));
         addSubjectBtn.addActionListener(this::showAddSubjectDialog);
 
+        JButton logoutBtn = new JButton("🚪 Logout");
+        logoutBtn.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        logoutBtn.setBackground(new Color(243, 139, 168));
+        logoutBtn.setForeground(HEADER_COLOR);
+        logoutBtn.setFocusPainted(false);
+        logoutBtn.setOpaque(true);
+        logoutBtn.setBorderPainted(false);
+        logoutBtn.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        logoutBtn.setBorder(BorderFactory.createEmptyBorder(8, 16, 8, 16));
+        logoutBtn.addActionListener(e -> {
+            int choice = JOptionPane.showConfirmDialog(this,
+                    "Are you sure you want to logout?",
+                    "Confirm Logout", JOptionPane.YES_NO_OPTION);
+            if (choice == JOptionPane.YES_OPTION) {
+                dispose();
+                SwingUtilities.invokeLater(() -> {
+                    LoginDialog loginDialog = new LoginDialog(null);
+                    loginDialog.setVisible(true);
+                    if (loginDialog.isLoginSuccessful()) {
+                        Student newStudent = loginDialog.getAuthenticatedStudent();
+                        new MainWindow(newStudent).setVisible(true);
+                    } else {
+                        System.exit(0);
+                    }
+                });
+            }
+        });
+
         JPanel headerRight = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
         headerRight.setOpaque(false);
         headerRight.add(userLabel);
         headerRight.add(addSubjectBtn);
+        headerRight.add(logoutBtn);
 
         headerPanel.add(titleLabel, BorderLayout.WEST);
         headerPanel.add(headerRight, BorderLayout.EAST);
