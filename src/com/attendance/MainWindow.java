@@ -18,6 +18,8 @@ public class MainWindow extends JFrame {
     private JPanel subjectsPanel;
     private JPanel summaryPanel;
     private WeeklySchedule schedule;
+    private JPanel undoPanel; // Toast bar for undo
+    private javax.swing.Timer undoTimer; // Auto-dismiss timer
 
     // Colors
     private static final Color BG_COLOR = new Color(30, 30, 46);
@@ -119,9 +121,18 @@ public class MainWindow extends JFrame {
         subjectsPanel.setBackground(BG_COLOR);
         subjectsPanel.setBorder(BorderFactory.createEmptyBorder(5, 20, 5, 20));
 
+        // Initialize Undo Panel
+        initializeUndoPanel();
+
+        // Wrapper for Summary + Undo to sit at the top
+        JPanel topContainer = new JPanel(new BorderLayout());
+        topContainer.setBackground(BG_COLOR);
+        topContainer.add(summaryPanel, BorderLayout.CENTER);
+        topContainer.add(undoPanel, BorderLayout.SOUTH); // Undo bar appears below summary
+
         JPanel centerPanel = new JPanel(new BorderLayout());
         centerPanel.setBackground(BG_COLOR);
-        centerPanel.add(summaryPanel, BorderLayout.NORTH);
+        centerPanel.add(topContainer, BorderLayout.NORTH);
         centerPanel.add(subjectsPanel, BorderLayout.CENTER);
 
         JScrollPane scrollPane = new JScrollPane(centerPanel);
@@ -405,6 +416,59 @@ public class MainWindow extends JFrame {
         return card;
     }
 
+    private void initializeUndoPanel() {
+        undoPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 20, 10));
+        undoPanel.setBackground(new Color(40, 40, 50)); // Darker background
+        undoPanel.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, ACCENT_COLOR));
+        undoPanel.setVisible(false);
+
+        JLabel msgLabel = new JLabel("Attendance marked.");
+        msgLabel.setForeground(TEXT_COLOR);
+        msgLabel.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+
+        JButton undoBtn = new JButton("↩ Undo");
+        undoBtn.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        undoBtn.setBackground(ACCENT_COLOR);
+        undoBtn.setForeground(HEADER_COLOR);
+        undoBtn.setFocusPainted(false);
+        undoBtn.setBorderPainted(false);
+        undoBtn.setOpaque(true);
+        undoBtn.setCursor(new Cursor(Cursor.HAND_CURSOR));
+
+        undoBtn.addActionListener(e -> handleUndo());
+
+        undoPanel.add(msgLabel);
+        undoPanel.add(undoBtn);
+
+        // Add to the top of the center panel (below header)
+        // We need to find the centerPanel which holds the summary and subjects
+        // In constructor: centerPanel.add(summaryPanel, BorderLayout.NORTH);
+        // We will inject a wrapper panel in the constructor instead to hold this.
+    }
+
+    // Temporary storage for undo
+    private Subject lastSubject;
+    private LocalDate lastDate;
+
+    private void handleUndo() {
+        if (lastSubject != null && lastDate != null) {
+            // Remove from DB
+            DatabaseManager.getInstance().deleteAttendanceRecord(lastSubject.getId(), lastDate);
+            // Remove from Model
+            lastSubject.removeRecordForDate(lastDate);
+
+            // Hide toast
+            undoPanel.setVisible(false);
+            undoTimer.stop();
+
+            // Refresh UI
+            refreshDashboard();
+
+            JOptionPane.showMessageDialog(this, "Attendance record removed.", "Undo Successful",
+                    JOptionPane.INFORMATION_MESSAGE);
+        }
+    }
+
     private void markAttendance(Subject subject, boolean present) {
         LocalDate today = LocalDate.now();
 
@@ -424,6 +488,22 @@ public class MainWindow extends JFrame {
                         "Invalid Date", JOptionPane.WARNING_MESSAGE);
                 return;
             }
+        }
+
+        // Block attendance on holidays
+        if (student.getHolidayDates().contains(today)) {
+            JOptionPane.showMessageDialog(this,
+                    "📅 Today (" + today + ") is a holiday!\nAttendance cannot be marked on holidays.",
+                    "Holiday", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        // Block attendance during mid-sem exams
+        if (student.isDuringMidsemExams(today)) {
+            JOptionPane.showMessageDialog(this,
+                    "📝 Today falls within the mid-sem exam period.\nNo classes are scheduled during exams.",
+                    "Exam Period", JOptionPane.WARNING_MESSAGE);
+            return;
         }
 
         // Check if this day is in the subject's weekly schedule
@@ -448,7 +528,28 @@ public class MainWindow extends JFrame {
 
         subject.addClass(today, present);
         DatabaseManager.getInstance().saveAttendanceRecord(subject.getId(), today, present);
+
+        // Show Undo Toast
+        lastSubject = subject;
+        lastDate = today;
+
+        showUndoToast();
+
         refreshDashboard();
+    }
+
+    private void showUndoToast() {
+        if (undoPanel == null)
+            return;
+
+        undoPanel.setVisible(true);
+        if (undoTimer != null && undoTimer.isRunning()) {
+            undoTimer.stop();
+        }
+
+        undoTimer = new javax.swing.Timer(5000, e -> undoPanel.setVisible(false));
+        undoTimer.setRepeats(false);
+        undoTimer.start();
     }
 
     private void deleteSubject(Subject subject) {
