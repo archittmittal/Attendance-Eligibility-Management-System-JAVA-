@@ -34,7 +34,7 @@ public class SubjectDetailDialog extends JDialog {
     private static final DateTimeFormatter DATE_FMT = DateTimeFormatter.ofPattern("yyyy-MM-dd (EEE)");
 
     public SubjectDetailDialog(Frame owner, Subject subject, Student student) {
-        super(owner, "📋 " + subject.getName() + " — Attendance Details", true);
+        super(owner, "📋 " + subject.getName() + " — Manage Attendance & History", true);
         this.subject = subject;
         this.student = student;
 
@@ -185,6 +185,8 @@ public class SubjectDetailDialog extends JDialog {
         JTextField dateField = new JTextField(LocalDate.now().toString(), 10);
         dateField.setBackground(FIELD_BG);
         dateField.setForeground(TEXT_COLOR);
+        dateField.setEditable(false);
+        dateField.setCursor(new Cursor(Cursor.HAND_CURSOR));
         dateField.setCaretColor(TEXT_COLOR);
         dateField.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         dateField.setBorder(BorderFactory.createCompoundBorder(
@@ -204,7 +206,7 @@ public class SubjectDetailDialog extends JDialog {
         dateLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
 
         addRow.add(dateLabel);
-        addRow.add(dateField);
+        addRow.add(createDatePickerPanel(dateField));
         addRow.add(addPresentBtn);
         addRow.add(addAbsentBtn);
         addRow.add(deleteBtn);
@@ -358,5 +360,44 @@ public class SubjectDetailDialog extends JDialog {
 
     public boolean isChanged() {
         return changed;
+    }
+
+    private JPanel createDatePickerPanel(JTextField field) {
+        JPanel p = new JPanel(new BorderLayout(5, 0));
+        p.setBackground(BG_COLOR);
+
+        JButton btn = new JButton("📅");
+        btn.setBackground(new Color(24, 24, 37)); // Match HEADER_COLOR
+        btn.setForeground(ACCENT_COLOR);
+        btn.setFocusPainted(false);
+        btn.setOpaque(true);
+        btn.setBorderPainted(false);
+        btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        btn.setBorder(BorderFactory.createEmptyBorder(0, 10, 0, 10));
+
+        btn.addActionListener(e -> {
+            LocalDate current = null;
+            try {
+                if (!field.getText().isEmpty())
+                    current = LocalDate.parse(field.getText());
+            } catch (Exception ex) {
+            }
+            LocalDate picked = DatePicker.show(this, current);
+            if (picked != null) {
+                field.setText(picked.toString());
+            }
+        });
+
+        // Also open on field click
+        field.addMouseListener(new java.awt.event.MouseAdapter() {
+            @Override
+            public void mouseClicked(java.awt.event.MouseEvent e) {
+                btn.doClick();
+            }
+        });
+
+        p.add(field, BorderLayout.CENTER);
+        p.add(btn, BorderLayout.EAST);
+        return p;
     }
 }

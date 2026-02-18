@@ -136,18 +136,29 @@ public class DatabaseManager {
     }
 
     /**
-     * Authenticate a student by username and password hash.
-     * Returns a fully loaded Student object, or null if login fails.
+     * Authenticate a student by username and plaintext password.
+     * Fetches the stored hash, then verifies in Java (supports salted hashes).
+     * Automatically upgrades legacy unsalted hashes on successful login.
+     *
+     * @param username the username
+     * @param password the plaintext password (NOT a hash)
+     * @return a fully loaded Student object, or null if login fails
      */
-    public Student authenticateStudent(String username, String passwordHash) {
-        String sql = "SELECT * FROM students WHERE username = ? AND password_hash = ?";
+    public Student authenticateStudent(String username, String password) {
+        String sql = "SELECT * FROM students WHERE username = ?";
         try (Connection conn = getConnection();
                 PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setString(1, username);
-            pstmt.setString(2, passwordHash);
 
             try (ResultSet rs = pstmt.executeQuery()) {
                 if (rs.next()) {
+                    String storedHash = rs.getString("password_hash");
+
+                    // Verify password against stored hash (salted or legacy)
+                    if (!PasswordValidator.checkPassword(password, storedHash)) {
+                        return null; // Wrong password
+                    }
+
                     Student student = new Student(rs.getString("name"));
                     student.setId(rs.getInt("id"));
                     student.setUsername(rs.getString("username"));
@@ -166,6 +177,12 @@ public class DatabaseManager {
                     if (d != null)
                         student.setSemesterEndDate(d.toLocalDate());
 
+                    // Auto-upgrade legacy unsalted hash to salted
+                    if (PasswordValidator.isLegacyHash(storedHash)) {
+                        String upgradedHash = PasswordValidator.hashPassword(password);
+                        updatePasswordHash(student.getId(), upgradedHash);
+                    }
+
                     return student;
                 }
             }
@@ -173,6 +190,22 @@ public class DatabaseManager {
             System.err.println("Error authenticating: " + e.getMessage());
         }
         return null;
+    }
+
+    /**
+     * Update a student's password hash (used for hash upgrades and password
+     * changes).
+     */
+    public void updatePasswordHash(int studentId, String newHash) {
+        String sql = "UPDATE students SET password_hash = ? WHERE id = ?";
+        try (Connection conn = getConnection();
+                PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, newHash);
+            pstmt.setInt(2, studentId);
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            System.err.println("Error updating password hash: " + e.getMessage());
+        }
     }
 
     /**
@@ -192,6 +225,25 @@ public class DatabaseManager {
             System.err.println("Error checking username: " + e.getMessage());
         }
         return false;
+    }
+
+    /**
+     * Get the stored password hash for a student.
+     */
+    public String getPasswordHash(int studentId) {
+        String sql = "SELECT password_hash FROM students WHERE id = ?";
+        try (Connection conn = getConnection();
+                PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setInt(1, studentId);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getString("password_hash");
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("Error getting password hash: " + e.getMessage());
+        }
+        return null;
     }
 
     /**
@@ -358,6 +410,47 @@ public class DatabaseManager {
         } catch (SQLException e) {
             System.err.println("Error deleting attendance record: " + e.getMessage());
         }
+    }
+
+    /**
+     * Delete ALL attendance records for a student on a specific date.
+     * Used when a holiday is added retroactively — clears conflicting records.
+     * Returns the number of records deleted.
+     */
+    public int deleteAttendanceOnDate(int studentId, LocalDate date) {
+        String sql = "DELETE ar FROM attendance_records ar "
+                + "JOIN subjects s ON ar.subject_id = s.id "
+                + "WHERE s.student_id = ? AND ar.record_date = ?";
+        try (Connection conn = getConnection();
+                PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setInt(1, studentId);
+            pstmt.setDate(2, Date.valueOf(date));
+            return pstmt.executeUpdate();
+        } catch (SQLException e) {
+            System.err.println("Error deleting attendance on holiday: " + e.getMessage());
+        }
+        return 0;
+    }
+
+    /**
+     * Delete ALL attendance records for a student within a date range.
+     * Used when a group holiday is added retroactively.
+     * Returns the number of records deleted.
+     */
+    public int deleteAttendanceInRange(int studentId, LocalDate fromDate, LocalDate toDate) {
+        String sql = "DELETE ar FROM attendance_records ar "
+                + "JOIN subjects s ON ar.subject_id = s.id "
+                + "WHERE s.student_id = ? AND ar.record_date BETWEEN ? AND ?";
+        try (Connection conn = getConnection();
+                PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setInt(1, studentId);
+            pstmt.setDate(2, Date.valueOf(fromDate));
+            pstmt.setDate(3, Date.valueOf(toDate));
+            return pstmt.executeUpdate();
+        } catch (SQLException e) {
+            System.err.println("Error deleting attendance in range: " + e.getMessage());
+        }
+        return 0;
     }
 
     /**
