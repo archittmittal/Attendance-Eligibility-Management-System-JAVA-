@@ -394,6 +394,47 @@ public class DatabaseManager {
     }
 
     /**
+     * Delete ALL attendance records for a student on a specific date.
+     * Used when a holiday is added retroactively — clears conflicting records.
+     * Returns the number of records deleted.
+     */
+    public int deleteAttendanceOnDate(int studentId, LocalDate date) {
+        String sql = "DELETE ar FROM attendance_records ar "
+                + "JOIN subjects s ON ar.subject_id = s.id "
+                + "WHERE s.student_id = ? AND ar.record_date = ?";
+        try (Connection conn = getConnection();
+                PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setInt(1, studentId);
+            pstmt.setDate(2, Date.valueOf(date));
+            return pstmt.executeUpdate();
+        } catch (SQLException e) {
+            System.err.println("Error deleting attendance on holiday: " + e.getMessage());
+        }
+        return 0;
+    }
+
+    /**
+     * Delete ALL attendance records for a student within a date range.
+     * Used when a group holiday is added retroactively.
+     * Returns the number of records deleted.
+     */
+    public int deleteAttendanceInRange(int studentId, LocalDate fromDate, LocalDate toDate) {
+        String sql = "DELETE ar FROM attendance_records ar "
+                + "JOIN subjects s ON ar.subject_id = s.id "
+                + "WHERE s.student_id = ? AND ar.record_date BETWEEN ? AND ?";
+        try (Connection conn = getConnection();
+                PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setInt(1, studentId);
+            pstmt.setDate(2, Date.valueOf(fromDate));
+            pstmt.setDate(3, Date.valueOf(toDate));
+            return pstmt.executeUpdate();
+        } catch (SQLException e) {
+            System.err.println("Error deleting attendance in range: " + e.getMessage());
+        }
+        return 0;
+    }
+
+    /**
      * Bulk save attendance records (for setting initial data).
      * Places records ONLY on scheduled weekdays, starting from semester start
      * date,
