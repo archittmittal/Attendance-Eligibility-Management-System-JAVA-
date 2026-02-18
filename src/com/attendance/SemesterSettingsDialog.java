@@ -68,21 +68,21 @@ public class SemesterSettingsDialog extends JDialog {
         JTextField lastDayField = createDateField(student.getSemesterEndDate());
 
         int row = 0;
-        addDateRow(inputPanel, gbc, row++, "Semester Start Date:", startField,
-                "When regular classes begin");
-        addDateRow(inputPanel, gbc, row++, "Mid-Sem Exam Start:", midStartField,
-                "When classes pause for mid-sem exams");
-        addDateRow(inputPanel, gbc, row++, "Mid-Sem Exam End:", midEndField,
-                "When classes resume after mid-sems");
-        addDateRow(inputPanel, gbc, row++, "Last Teaching Day:", lastDayField,
-                "Last day of regular classes (before end-sem)");
+        addDateRow(inputPanel, gbc, row++, "Semester Start Date:",
+                createDatePickerPanel(startField), "When regular classes begin");
+        addDateRow(inputPanel, gbc, row++, "Mid-Sem Exam Start:",
+                createDatePickerPanel(midStartField), "When classes pause for mid-sem exams");
+        addDateRow(inputPanel, gbc, row++, "Mid-Sem Exam End:",
+                createDatePickerPanel(midEndField), "When classes resume after mid-sems");
+        addDateRow(inputPanel, gbc, row++, "Last Teaching Day:",
+                createDatePickerPanel(lastDayField), "Last day of regular classes (before end-sem)");
 
         // Info label
         gbc.gridx = 0;
         gbc.gridy = row;
         gbc.gridwidth = 2;
         gbc.insets = new Insets(15, 5, 5, 5);
-        JLabel infoLabel = new JLabel("ℹ️ Format: YYYY-MM-DD  (e.g. 2026-01-06)");
+        JLabel infoLabel = new JLabel("ℹ️ Click the 📅 or the field to pick a date.");
         infoLabel.setFont(new Font("Segoe UI", Font.ITALIC, 11));
         infoLabel.setForeground(new Color(147, 153, 178));
         inputPanel.add(infoLabel, gbc);
@@ -155,7 +155,7 @@ public class SemesterSettingsDialog extends JDialog {
     }
 
     private void addDateRow(JPanel panel, GridBagConstraints gbc, int row,
-            String labelText, JTextField field, String tooltip) {
+            String labelText, JPanel fieldPanel, String tooltip) {
         gbc.gridx = 0;
         gbc.gridy = row;
         gbc.gridwidth = 1;
@@ -167,8 +167,8 @@ public class SemesterSettingsDialog extends JDialog {
 
         gbc.gridx = 1;
         gbc.weightx = 0.6;
-        field.setToolTipText(tooltip);
-        panel.add(field, gbc);
+        fieldPanel.setToolTipText(tooltip);
+        panel.add(fieldPanel, gbc);
     }
 
     private JTextField createDateField(LocalDate date) {
@@ -176,6 +176,8 @@ public class SemesterSettingsDialog extends JDialog {
         field.setBackground(FIELD_BG);
         field.setForeground(TEXT_COLOR);
         field.setCaretColor(TEXT_COLOR);
+        field.setEditable(false);
+        field.setCursor(new Cursor(Cursor.HAND_CURSOR));
         field.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         field.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createLineBorder(new Color(88, 91, 112), 1),
@@ -184,6 +186,45 @@ public class SemesterSettingsDialog extends JDialog {
             field.setText(date.toString());
         }
         return field;
+    }
+
+    private JPanel createDatePickerPanel(JTextField field) {
+        JPanel p = new JPanel(new BorderLayout(5, 0));
+        p.setBackground(CARD_COLOR);
+
+        JButton btn = new JButton("📅");
+        btn.setBackground(new Color(24, 24, 37)); // Match HEADER_COLOR
+        btn.setForeground(ACCENT_COLOR);
+        btn.setFocusPainted(false);
+        btn.setOpaque(true);
+        btn.setBorderPainted(false);
+        btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        btn.setBorder(BorderFactory.createEmptyBorder(0, 10, 0, 10));
+
+        btn.addActionListener(e -> {
+            LocalDate current = null;
+            try {
+                if (!field.getText().isEmpty())
+                    current = LocalDate.parse(field.getText());
+            } catch (Exception ex) {
+            }
+            LocalDate picked = DatePicker.show(this, current);
+            if (picked != null) {
+                field.setText(picked.toString());
+            }
+        });
+
+        // Also open on field click
+        field.addMouseListener(new java.awt.event.MouseAdapter() {
+            @Override
+            public void mouseClicked(java.awt.event.MouseEvent e) {
+                btn.doClick();
+            }
+        });
+
+        p.add(field, BorderLayout.CENTER);
+        p.add(btn, BorderLayout.EAST);
+        return p;
     }
 
     private void saveSemesterSettings(JTextField startField, JTextField midStartField,
