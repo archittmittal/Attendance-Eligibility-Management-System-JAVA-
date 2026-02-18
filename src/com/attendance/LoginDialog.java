@@ -126,8 +126,8 @@ public class LoginDialog extends JDialog {
                 return;
             }
 
-            String hash = PasswordValidator.hashPassword(password);
-            Student student = DatabaseManager.getInstance().authenticateStudent(username, hash);
+            // Pass plaintext password — DatabaseManager verifies against stored salted hash
+            Student student = DatabaseManager.getInstance().authenticateStudent(username, password);
 
             if (student != null) {
                 authenticatedStudent = student;
