@@ -69,12 +69,12 @@ public class PredictionDialog extends JDialog {
         gbc.gridx = 0;
         inputPanel.add(startLabel, gbc);
         gbc.gridx = 1;
-        inputPanel.add(startDateField, gbc);
+        inputPanel.add(createDatePickerPanel(startDateField), gbc);
         gbc.gridy = 2;
         gbc.gridx = 0;
         inputPanel.add(endLabel, gbc);
         gbc.gridx = 1;
-        inputPanel.add(endDateField, gbc);
+        inputPanel.add(createDatePickerPanel(endDateField), gbc);
 
         JButton predictBtn = new JButton("Analyze Leave Impact");
         predictBtn.setFont(new Font("Segoe UI", Font.BOLD, 13));
@@ -119,12 +119,53 @@ public class PredictionDialog extends JDialog {
         field.setText(defaultValue);
         field.setBackground(FIELD_BG);
         field.setForeground(TEXT_COLOR);
+        field.setEditable(false);
+        field.setCursor(new Cursor(Cursor.HAND_CURSOR));
         field.setCaretColor(TEXT_COLOR);
         field.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         field.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createLineBorder(new Color(88, 91, 112)),
                 BorderFactory.createEmptyBorder(6, 8, 6, 8)));
         return field;
+    }
+
+    private JPanel createDatePickerPanel(JTextField field) {
+        JPanel p = new JPanel(new BorderLayout(5, 0));
+        p.setBackground(CARD_COLOR);
+
+        JButton btn = new JButton("📅");
+        btn.setBackground(new Color(24, 24, 37)); // Match HEADER_COLOR
+        btn.setForeground(ACCENT_COLOR);
+        btn.setFocusPainted(false);
+        btn.setOpaque(true);
+        btn.setBorderPainted(false);
+        btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        btn.setBorder(BorderFactory.createEmptyBorder(0, 10, 0, 10));
+
+        btn.addActionListener(e -> {
+            LocalDate current = null;
+            try {
+                if (!field.getText().isEmpty())
+                    current = LocalDate.parse(field.getText());
+            } catch (Exception ex) {
+            }
+            LocalDate picked = DatePicker.show(this, current);
+            if (picked != null) {
+                field.setText(picked.toString());
+            }
+        });
+
+        // Also open on field click
+        field.addMouseListener(new java.awt.event.MouseAdapter() {
+            @Override
+            public void mouseClicked(java.awt.event.MouseEvent e) {
+                btn.doClick();
+            }
+        });
+
+        p.add(field, BorderLayout.CENTER);
+        p.add(btn, BorderLayout.EAST);
+        return p;
     }
 
     private void runAnalysis(JTextField startField, JTextField endField, JTextArea resultArea) {

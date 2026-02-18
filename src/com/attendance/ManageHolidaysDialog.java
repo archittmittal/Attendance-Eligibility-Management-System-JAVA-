@@ -90,20 +90,17 @@ public class ManageHolidaysDialog extends JDialog {
         dateRow.setBackground(BG_COLOR);
 
         JLabel fromLabel = createLabel("From Date:");
-        JTextField fromField = createTextField(10);
-        fromField.setText(LocalDate.now().toString());
-        fromField.setToolTipText("YYYY-MM-DD");
+        JTextField fromField = createDateField(LocalDate.now().toString());
 
         JLabel toLabel = createLabel("To Date:");
-        JTextField toField = createTextField(10);
-        toField.setText("");
-        toField.setToolTipText("YYYY-MM-DD (leave empty for single day)");
+        JTextField toField = createDateField("");
+        toField.setToolTipText("Leave empty for single day");
 
         dateRow.add(fromLabel);
-        dateRow.add(fromField);
+        dateRow.add(createDatePickerPanel(fromField));
         dateRow.add(Box.createHorizontalStrut(10));
         dateRow.add(toLabel);
-        dateRow.add(toField);
+        dateRow.add(createDatePickerPanel(toField));
         inputPanel.add(dateRow);
 
         // ── Row 3: Action Buttons ──
@@ -254,16 +251,17 @@ public class ManageHolidaysDialog extends JDialog {
             JPanel editPanel = new JPanel(new GridLayout(2, 2, 8, 8));
             editPanel.setBackground(CARD_COLOR);
 
-            JLabel dateLbl = new JLabel("Date (YYYY-MM-DD):");
+            JLabel dateLbl = new JLabel("Date:");
             dateLbl.setForeground(TEXT_COLOR);
-            JTextField dateInput = new JTextField(oldDateStr);
+            JTextField dateInput = createDateField(oldDateStr);
 
             JLabel descLbl = new JLabel("Description:");
             descLbl.setForeground(TEXT_COLOR);
-            JTextField descInput = new JTextField(oldDesc);
+            JTextField descInput = createTextField(20);
+            descInput.setText(oldDesc);
 
             editPanel.add(dateLbl);
-            editPanel.add(dateInput);
+            editPanel.add(createDatePickerPanel(dateInput));
             editPanel.add(descLbl);
             editPanel.add(descInput);
 
@@ -381,6 +379,60 @@ public class ManageHolidaysDialog extends JDialog {
                 BorderFactory.createLineBorder(new Color(88, 91, 112)),
                 BorderFactory.createEmptyBorder(5, 8, 5, 8)));
         return f;
+    }
+
+    private JTextField createDateField(String text) {
+        JTextField f = new JTextField(10);
+        f.setBackground(FIELD_BG);
+        f.setForeground(TEXT_COLOR);
+        f.setEditable(false);
+        f.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        f.setCaretColor(TEXT_COLOR);
+        f.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        f.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(new Color(88, 91, 112)),
+                BorderFactory.createEmptyBorder(5, 8, 5, 8)));
+        f.setText(text);
+        return f;
+    }
+
+    private JPanel createDatePickerPanel(JTextField field) {
+        JPanel p = new JPanel(new BorderLayout(5, 0));
+        p.setBackground(BG_COLOR); // Use BG_COLOR as it's added to inputPanel which is BG_COLOR
+
+        JButton btn = new JButton("📅");
+        btn.setBackground(new Color(24, 24, 37)); // Match HEADER_COLOR
+        btn.setForeground(ACCENT_COLOR);
+        btn.setFocusPainted(false);
+        btn.setOpaque(true);
+        btn.setBorderPainted(false);
+        btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        btn.setBorder(BorderFactory.createEmptyBorder(0, 10, 0, 10));
+
+        btn.addActionListener(e -> {
+            LocalDate current = null;
+            try {
+                if (!field.getText().isEmpty())
+                    current = LocalDate.parse(field.getText());
+            } catch (Exception ex) {
+            }
+            LocalDate picked = DatePicker.show(this, current);
+            if (picked != null) {
+                field.setText(picked.toString());
+            }
+        });
+
+        // Also open on field click
+        field.addMouseListener(new java.awt.event.MouseAdapter() {
+            @Override
+            public void mouseClicked(java.awt.event.MouseEvent e) {
+                btn.doClick();
+            }
+        });
+
+        p.add(field, BorderLayout.CENTER);
+        p.add(btn, BorderLayout.EAST);
+        return p;
     }
 
     private JButton createButton(String text, Color bgColor) {
