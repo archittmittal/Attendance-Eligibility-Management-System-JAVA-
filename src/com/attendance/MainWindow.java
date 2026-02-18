@@ -373,16 +373,17 @@ public class MainWindow extends JFrame {
         JPanel editPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 5, 3));
         editPanel.setOpaque(false);
 
-        JButton editBtn = new JButton("✏️ Edit");
-        editBtn.setFont(new Font("Segoe UI", Font.PLAIN, 11));
-        editBtn.setBackground(SURFACE);
-        editBtn.setForeground(TEXT_COLOR);
-        editBtn.setFocusPainted(false);
-        editBtn.setOpaque(true);
-        editBtn.setBorderPainted(false);
-        editBtn.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        editBtn.setBorder(BorderFactory.createEmptyBorder(4, 8, 4, 8));
-        editBtn.addActionListener(e -> showEditSubjectDialog(subject));
+        JButton historyBtn = new JButton("📅 History / Past");
+        historyBtn.setFont(new Font("Segoe UI", Font.PLAIN, 11));
+        historyBtn.setBackground(SURFACE);
+        historyBtn.setForeground(TEXT_COLOR);
+        historyBtn.setFocusPainted(false);
+        historyBtn.setOpaque(true);
+        historyBtn.setBorderPainted(false);
+        historyBtn.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        historyBtn.setBorder(BorderFactory.createEmptyBorder(4, 8, 4, 8));
+        historyBtn.setToolTipText("View attendance history, add past records, or rename subject");
+        historyBtn.addActionListener(e -> showEditSubjectDialog(subject));
 
         JButton deleteBtn = new JButton("🗑️ Delete");
         deleteBtn.setFont(new Font("Segoe UI", Font.PLAIN, 11));
@@ -395,7 +396,7 @@ public class MainWindow extends JFrame {
         deleteBtn.setBorder(BorderFactory.createEmptyBorder(4, 8, 4, 8));
         deleteBtn.addActionListener(e -> deleteSubject(subject));
 
-        editPanel.add(editBtn);
+        editPanel.add(historyBtn);
         editPanel.add(deleteBtn);
 
         actionsPanel.add(markPanel);
