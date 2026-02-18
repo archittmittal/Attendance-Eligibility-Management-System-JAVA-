@@ -154,6 +154,17 @@ public class ManageHolidaysDialog extends JDialog {
                     Holiday holiday = new Holiday(date, description);
                     student.addHoliday(holiday);
                     DatabaseManager.getInstance().addHoliday(student.getId(), date, description);
+
+                    // Auto-clean conflicting attendance records
+                    int cleaned = DatabaseManager.getInstance().deleteAttendanceOnDate(student.getId(), date);
+                    // Reload subject data to reflect cleaned records
+                    if (cleaned > 0) {
+                        reloadStudentSubjects();
+                        JOptionPane.showMessageDialog(this,
+                                "Holiday added! " + cleaned + " conflicting attendance record(s) were removed.",
+                                "Holiday Added", JOptionPane.INFORMATION_MESSAGE);
+                    }
+
                     loadHolidays();
                     fromField.setText("");
                     descField.setText("Official Holiday");
@@ -202,12 +213,24 @@ public class ManageHolidaysDialog extends JDialog {
                     }
                     // Batch save to DB
                     DatabaseManager.getInstance().addHolidayRange(student.getId(), fromDate, toDate, description);
+
+                    // Auto-clean conflicting attendance records in the range
+                    int cleaned = DatabaseManager.getInstance().deleteAttendanceInRange(student.getId(), fromDate,
+                            toDate);
+                    if (cleaned > 0) {
+                        reloadStudentSubjects();
+                    }
+
                     loadHolidays();
                     fromField.setText("");
                     toField.setText("");
                     descField.setText("Official Holiday");
-                    JOptionPane.showMessageDialog(this,
-                            days + " holidays added for \"" + description + "\"!",
+
+                    String msg = days + " holidays added for \"" + description + "\"!";
+                    if (cleaned > 0) {
+                        msg += "\n" + cleaned + " conflicting attendance record(s) were removed.";
+                    }
+                    JOptionPane.showMessageDialog(this, msg,
                             "Group Holiday Added", JOptionPane.INFORMATION_MESSAGE);
                 }
             } catch (DateTimeParseException ex) {
@@ -312,6 +335,18 @@ public class ManageHolidaysDialog extends JDialog {
         });
 
         setContentPane(mainPanel);
+    }
+
+    /**
+     * Reload all subjects (and their attendance records) from DB.
+     * Called after conflicting attendance records are cleaned up.
+     */
+    private void reloadStudentSubjects() {
+        student.getSubjects().clear();
+        List<Subject> freshSubjects = DatabaseManager.getInstance().loadSubjects(student.getId());
+        for (Subject s : freshSubjects) {
+            student.addSubject(s);
+        }
     }
 
     private void loadHolidays() {

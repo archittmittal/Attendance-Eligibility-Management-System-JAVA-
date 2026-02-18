@@ -426,6 +426,22 @@ public class MainWindow extends JFrame {
             }
         }
 
+        // Block attendance on holidays
+        if (student.getHolidayDates().contains(today)) {
+            JOptionPane.showMessageDialog(this,
+                    "📅 Today (" + today + ") is a holiday!\nAttendance cannot be marked on holidays.",
+                    "Holiday", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        // Block attendance during mid-sem exams
+        if (student.isDuringMidsemExams(today)) {
+            JOptionPane.showMessageDialog(this,
+                    "📝 Today falls within the mid-sem exam period.\nNo classes are scheduled during exams.",
+                    "Exam Period", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
         // Check if this day is in the subject's weekly schedule
         java.util.List<Subject> scheduledSubjects = schedule.getSubjectsOn(today.getDayOfWeek());
         if (scheduledSubjects == null || !scheduledSubjects.contains(subject)) {
