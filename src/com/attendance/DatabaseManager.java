@@ -228,6 +228,40 @@ public class DatabaseManager {
     }
 
     /**
+     * Get the stored password hash for a student.
+     */
+    public String getPasswordHash(int studentId) {
+        String sql = "SELECT password_hash FROM students WHERE id = ?";
+        try (Connection conn = getConnection();
+                PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setInt(1, studentId);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getString("password_hash");
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("Error getting password hash: " + e.getMessage());
+        }
+        return null;
+    }
+
+    /**
+     * Update a student's password hash.
+     */
+    public void updatePasswordHash(int studentId, String newHash) {
+        String sql = "UPDATE students SET password_hash = ? WHERE id = ?";
+        try (Connection conn = getConnection();
+                PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, newHash);
+            pstmt.setInt(2, studentId);
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            System.err.println("Error updating password hash: " + e.getMessage());
+        }
+    }
+
+    /**
      * Save semester settings for a student.
      */
     public void saveSemesterSettings(Student student) {

@@ -144,6 +144,8 @@ public class MainWindow extends JFrame {
                 }));
         footerPanel.add(createFooterButton("🏖️ Plan Leave / Predict",
                 this::showPredictionDialog));
+        footerPanel.add(createFooterButton("🔑 Change Password",
+                e -> showChangePasswordDialog()));
 
         add(footerPanel, BorderLayout.SOUTH);
 
@@ -694,5 +696,141 @@ public class MainWindow extends JFrame {
 
     private void showPredictionDialog(ActionEvent e) {
         new PredictionDialog(this, student, schedule).setVisible(true);
+    }
+
+    /**
+     * Show a dialog to change the current user's password.
+     * Requires old password verification and new password validation.
+     */
+    private void showChangePasswordDialog() {
+        JDialog dialog = new JDialog(this, "Change Password", true);
+        dialog.setSize(420, 400);
+        dialog.setLocationRelativeTo(this);
+
+        JPanel mainPanel = new JPanel(new BorderLayout());
+        mainPanel.setBackground(BG_COLOR);
+
+        JPanel formPanel = new JPanel(new GridBagLayout());
+        formPanel.setBackground(CARD_COLOR);
+        formPanel.setBorder(BorderFactory.createEmptyBorder(20, 25, 20, 25));
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(6, 5, 6, 5);
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.gridwidth = 2;
+
+        // Fields
+        JLabel oldLabel = new JLabel("Current Password:");
+        oldLabel.setForeground(TEXT_COLOR);
+        oldLabel.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        JPasswordField oldField = new JPasswordField(20);
+        stylePasswordField(oldField);
+
+        JLabel newLabel = new JLabel("New Password:");
+        newLabel.setForeground(TEXT_COLOR);
+        newLabel.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        JPasswordField newField = new JPasswordField(20);
+        stylePasswordField(newField);
+
+        JLabel confirmLabel = new JLabel("Confirm New Password:");
+        confirmLabel.setForeground(TEXT_COLOR);
+        confirmLabel.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        JPasswordField confirmField = new JPasswordField(20);
+        stylePasswordField(confirmField);
+
+        JLabel statusLabel = new JLabel(" ");
+        statusLabel.setForeground(RED);
+        statusLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+
+        // Layout
+        int row = 0;
+        gbc.gridy = row++;
+        formPanel.add(oldLabel, gbc);
+        gbc.gridy = row++;
+        formPanel.add(oldField, gbc);
+        gbc.gridy = row++;
+        formPanel.add(newLabel, gbc);
+        gbc.gridy = row++;
+        formPanel.add(newField, gbc);
+        gbc.gridy = row++;
+        formPanel.add(confirmLabel, gbc);
+        gbc.gridy = row++;
+        formPanel.add(confirmField, gbc);
+        gbc.gridy = row++;
+        gbc.insets = new Insets(12, 5, 6, 5);
+        formPanel.add(statusLabel, gbc);
+
+        mainPanel.add(formPanel, BorderLayout.CENTER);
+
+        // Save button
+        JButton saveBtn = new JButton("Update Password");
+        saveBtn.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        saveBtn.setBackground(ACCENT_COLOR);
+        saveBtn.setForeground(HEADER_COLOR);
+        saveBtn.setFocusPainted(false);
+        saveBtn.setOpaque(true);
+        saveBtn.setBorderPainted(false);
+        saveBtn.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        saveBtn.setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20));
+
+        saveBtn.addActionListener(e -> {
+            String oldPw = new String(oldField.getPassword());
+            String newPw = new String(newField.getPassword());
+            String confirmPw = new String(confirmField.getPassword());
+
+            // Verify current password
+            String storedHash = DatabaseManager.getInstance().getPasswordHash(student.getId());
+            String oldHash = PasswordValidator.hashPassword(oldPw);
+            if (!oldHash.equals(storedHash)) {
+                statusLabel.setText("Current password is incorrect.");
+                return;
+            }
+
+            // Validate new password
+            String validationError = PasswordValidator.validate(newPw);
+            if (validationError != null) {
+                statusLabel.setText(validationError);
+                return;
+            }
+
+            // Check match
+            if (!newPw.equals(confirmPw)) {
+                statusLabel.setText("New passwords do not match.");
+                return;
+            }
+
+            // Check not same as old
+            if (oldPw.equals(newPw)) {
+                statusLabel.setText("New password must be different from current.");
+                return;
+            }
+
+            // Save
+            String newHash = PasswordValidator.hashPassword(newPw);
+            DatabaseManager.getInstance().updatePasswordHash(student.getId(), newHash);
+
+            JOptionPane.showMessageDialog(dialog,
+                    "Password changed successfully!",
+                    "Success", JOptionPane.INFORMATION_MESSAGE);
+            dialog.dispose();
+        });
+
+        JPanel btnPanel = new JPanel();
+        btnPanel.setBackground(BG_COLOR);
+        btnPanel.setBorder(BorderFactory.createEmptyBorder(5, 0, 10, 0));
+        btnPanel.add(saveBtn);
+        mainPanel.add(btnPanel, BorderLayout.SOUTH);
+
+        dialog.setContentPane(mainPanel);
+        dialog.setVisible(true);
+    }
+
+    private void stylePasswordField(JPasswordField f) {
+        f.setBackground(SURFACE);
+        f.setForeground(TEXT_COLOR);
+        f.setCaretColor(TEXT_COLOR);
+        f.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        f.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(new Color(88, 91, 112), 1),
+                BorderFactory.createEmptyBorder(6, 8, 6, 8)));
     }
 }
