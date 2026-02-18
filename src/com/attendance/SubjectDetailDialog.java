@@ -34,7 +34,7 @@ public class SubjectDetailDialog extends JDialog {
     private static final DateTimeFormatter DATE_FMT = DateTimeFormatter.ofPattern("yyyy-MM-dd (EEE)");
 
     public SubjectDetailDialog(Frame owner, Subject subject, Student student) {
-        super(owner, "📋 " + subject.getName() + " — Attendance Details", true);
+        super(owner, "📋 " + subject.getName() + " — Manage Attendance & History", true);
         this.subject = subject;
         this.student = student;
 
