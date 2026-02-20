@@ -297,6 +297,7 @@ Contributions, issues, and feature requests are welcome! Feel free to check the 
 ## 📧 Contact
 
 For questions or suggestions, please reach out through GitHub issues.
+Email - [EMAIL_ADDRESS](work.architmittal@gmail.com)
 
 ---
 
