@@ -159,6 +159,25 @@ public class MainWindow extends JFrame {
                 }));
         footerPanel.add(createFooterButton("🏖️ Plan Leave / Predict",
                 this::showPredictionDialog));
+
+        JButton exportBtn = createFooterButton("📤 Export", null);
+        JPopupMenu exportMenu = new JPopupMenu();
+        exportMenu.setBackground(new Color(49, 50, 68));
+        JMenuItem csvItem = new JMenuItem("📄 Export as CSV");
+        csvItem.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        csvItem.setBackground(new Color(49, 50, 68));
+        csvItem.setForeground(TEXT_COLOR);
+        csvItem.addActionListener(ev -> ExportManager.exportCSV(this, student));
+        JMenuItem pdfItem = new JMenuItem("📑 Export as PDF");
+        pdfItem.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        pdfItem.setBackground(new Color(49, 50, 68));
+        pdfItem.setForeground(TEXT_COLOR);
+        pdfItem.addActionListener(ev -> ExportManager.exportPDF(this, student));
+        exportMenu.add(csvItem);
+        exportMenu.add(pdfItem);
+        exportBtn.addActionListener(ev -> exportMenu.show(exportBtn, 0, -exportMenu.getPreferredSize().height));
+        footerPanel.add(exportBtn);
+
         footerPanel.add(createFooterButton("🔑 Change Password",
                 e -> showChangePasswordDialog()));
 
