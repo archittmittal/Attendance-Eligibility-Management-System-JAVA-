@@ -171,7 +171,57 @@ public class SubjectDetailDialog extends JDialog {
         JScrollPane tableScroll = new JScrollPane(table);
         tableScroll.setBorder(BorderFactory.createEmptyBorder(0, 10, 0, 10));
         tableScroll.getViewport().setBackground(CARD_COLOR);
-        mainPanel.add(tableScroll, BorderLayout.CENTER);
+
+        // ═══ Calendar Heat-Map View ═══
+        CalendarHeatMapPanel calendarPanel = new CalendarHeatMapPanel(subject, student.getHolidayDates());
+
+        JPanel calendarWrapper = new JPanel(new BorderLayout());
+        calendarWrapper.setBackground(BG_COLOR);
+
+        // Navigation bar (prev/next month)
+        JPanel navPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 15, 5));
+        navPanel.setBackground(BG_COLOR);
+
+        JButton prevBtn = createSmallButton("◀ Prev", ACCENT_COLOR, BG_COLOR);
+        JLabel monthLabel = new JLabel(calendarPanel.getMonthLabel());
+        monthLabel.setFont(new Font("Segoe UI", Font.BOLD, 16));
+        monthLabel.setForeground(TEXT_COLOR);
+        JButton nextBtn = createSmallButton("Next ▶", ACCENT_COLOR, BG_COLOR);
+
+        prevBtn.addActionListener(e -> {
+            calendarPanel.previousMonth();
+            monthLabel.setText(calendarPanel.getMonthLabel());
+        });
+        nextBtn.addActionListener(e -> {
+            calendarPanel.nextMonth();
+            monthLabel.setText(calendarPanel.getMonthLabel());
+        });
+
+        navPanel.add(prevBtn);
+        navPanel.add(monthLabel);
+        navPanel.add(nextBtn);
+
+        // Legend
+        JPanel legendPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 15, 5));
+        legendPanel.setBackground(BG_COLOR);
+        legendPanel.add(createLegendDot("Present", GREEN));
+        legendPanel.add(createLegendDot("Absent", RED));
+        legendPanel.add(createLegendDot("Holiday", new Color(249, 226, 175)));
+        legendPanel.add(createLegendDot("No Class", SUBTEXT_COLOR));
+
+        calendarWrapper.add(navPanel, BorderLayout.NORTH);
+        calendarWrapper.add(calendarPanel, BorderLayout.CENTER);
+        calendarWrapper.add(legendPanel, BorderLayout.SOUTH);
+
+        // ═══ Tabbed Pane ═══
+        JTabbedPane tabbedPane = new JTabbedPane();
+        tabbedPane.setBackground(CARD_COLOR);
+        tabbedPane.setForeground(TEXT_COLOR);
+        tabbedPane.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        tabbedPane.addTab("📋 Table View", tableScroll);
+        tabbedPane.addTab("📅 Calendar View", calendarWrapper);
+
+        mainPanel.add(tabbedPane, BorderLayout.CENTER);
 
         // ═══ Bottom: Add Date + Delete Record + Close ═══
         JPanel bottomPanel = new JPanel(new BorderLayout());
@@ -356,6 +406,13 @@ public class SubjectDetailDialog extends JDialog {
         btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
         btn.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10));
         return btn;
+    }
+
+    private JLabel createLegendDot(String text, Color color) {
+        JLabel label = new JLabel("● " + text);
+        label.setForeground(color);
+        label.setFont(new Font("Segoe UI", Font.BOLD, 11));
+        return label;
     }
 
     public boolean isChanged() {
