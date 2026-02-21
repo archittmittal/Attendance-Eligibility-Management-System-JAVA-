@@ -148,6 +148,8 @@ public class MainWindow extends JFrame {
 
         footerPanel.add(createFooterButton("📋 Timetable",
                 e -> new TimetableDialog(this, schedule, student.getSubjects()).setVisible(true)));
+        footerPanel.add(createFooterButton("📊 Trends",
+                e -> new AttendanceTrendsDialog(this, student).setVisible(true)));
         footerPanel.add(createFooterButton("📅 Manage Holidays",
                 e -> new ManageHolidaysDialog(this, student).setVisible(true)));
         footerPanel.add(createFooterButton("⚙️ Semester Settings",
