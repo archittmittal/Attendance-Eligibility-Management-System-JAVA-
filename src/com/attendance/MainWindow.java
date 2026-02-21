@@ -146,6 +146,8 @@ public class MainWindow extends JFrame {
         footerPanel.setBackground(HEADER_COLOR);
         footerPanel.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10));
 
+        footerPanel.add(createFooterButton("📋 Timetable",
+                e -> new TimetableDialog(this, schedule, student.getSubjects()).setVisible(true)));
         footerPanel.add(createFooterButton("📅 Manage Holidays",
                 e -> new ManageHolidaysDialog(this, student).setVisible(true)));
         footerPanel.add(createFooterButton("⚙️ Semester Settings",
