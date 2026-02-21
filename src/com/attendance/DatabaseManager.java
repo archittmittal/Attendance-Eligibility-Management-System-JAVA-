@@ -102,6 +102,13 @@ public class DatabaseManager {
             for (String sql : createStatements) {
                 stmt.executeUpdate(sql);
             }
+            // Add theme column if it doesn't exist (migration for existing DBs)
+            try {
+                stmt.executeUpdate(
+                        "ALTER TABLE students ADD COLUMN theme VARCHAR(10) DEFAULT 'dark'");
+            } catch (SQLException ignored) {
+                // Column already exists — safe to ignore
+            }
         } catch (SQLException e) {
             System.err.println("Error initializing tables: " + e.getMessage());
         }
@@ -689,6 +696,47 @@ public class DatabaseManager {
             }
         } catch (SQLException e) {
             System.err.println("Error loading schedule: " + e.getMessage());
+        }
+    }
+
+    // ══════════════════════════════════════════════
+    // THEME PERSISTENCE
+    // ══════════════════════════════════════════════
+
+    /**
+     * Load the theme preference for a student.
+     * 
+     * @return "dark" or "light" (defaults to "dark")
+     */
+    public String loadTheme(int studentId) {
+        String sql = "SELECT theme FROM students WHERE id = ?";
+        try (Connection conn = getConnection();
+                PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setInt(1, studentId);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    String theme = rs.getString("theme");
+                    return theme != null ? theme : "dark";
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("Error loading theme: " + e.getMessage());
+        }
+        return "dark";
+    }
+
+    /**
+     * Save the theme preference for a student.
+     */
+    public void saveTheme(int studentId, String theme) {
+        String sql = "UPDATE students SET theme = ? WHERE id = ?";
+        try (Connection conn = getConnection();
+                PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, theme);
+            pstmt.setInt(2, studentId);
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            System.err.println("Error saving theme: " + e.getMessage());
         }
     }
 }

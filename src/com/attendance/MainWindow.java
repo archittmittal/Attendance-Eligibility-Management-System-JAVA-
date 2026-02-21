@@ -13,7 +13,7 @@ import java.util.List;
  * Shows attendance cards for each subject, overall stats, and action buttons.
  * All data is loaded from and saved to MySQL via DatabaseManager.
  */
-public class MainWindow extends JFrame {
+public class MainWindow extends JFrame implements ThemeManager.ThemeChangeListener {
     private Student student;
     private JPanel subjectsPanel;
     private JPanel summaryPanel;
@@ -21,21 +21,38 @@ public class MainWindow extends JFrame {
     private JPanel undoPanel; // Toast bar for undo
     private javax.swing.Timer undoTimer; // Auto-dismiss timer
 
-    // Colors
-    private static final Color BG_COLOR = new Color(30, 30, 46);
-    private static final Color CARD_COLOR = new Color(49, 50, 68);
-    private static final Color HEADER_COLOR = new Color(24, 24, 37);
-    private static final Color ACCENT_COLOR = new Color(137, 180, 250);
-    private static final Color TEXT_COLOR = new Color(205, 214, 244);
-    private static final Color SUBTEXT_COLOR = new Color(147, 153, 178);
-    private static final Color GREEN = new Color(166, 227, 161);
-    private static final Color RED = new Color(243, 139, 168);
-    private static final Color YELLOW = new Color(249, 226, 175);
-    private static final Color SURFACE = new Color(69, 71, 90);
+    // Colors — now resolved dynamically via ThemeManager
+    private Color BG_COLOR;
+    private Color CARD_COLOR;
+    private Color HEADER_COLOR;
+    private Color ACCENT_COLOR;
+    private Color TEXT_COLOR;
+    private Color SUBTEXT_COLOR;
+    private Color GREEN;
+    private Color RED;
+    private Color YELLOW;
+    private Color SURFACE;
+
+    private void refreshColors() {
+        BG_COLOR = ThemeManager.getBgColor();
+        CARD_COLOR = ThemeManager.getCardColor();
+        HEADER_COLOR = ThemeManager.getHeaderColor();
+        ACCENT_COLOR = ThemeManager.getAccentColor();
+        TEXT_COLOR = ThemeManager.getTextColor();
+        SUBTEXT_COLOR = ThemeManager.getSubtextColor();
+        GREEN = ThemeManager.getGreenColor();
+        RED = ThemeManager.getRedColor();
+        YELLOW = ThemeManager.getYellowColor();
+        SURFACE = ThemeManager.getSurfaceColor();
+    }
 
     public MainWindow(Student student) {
         this.student = student;
         this.schedule = new WeeklySchedule();
+
+        // Load theme preference from DB
+        ThemeManager.loadTheme(student.getId());
+        refreshColors();
 
         // Load schedule from DB
         DatabaseManager.getInstance().loadSchedule(schedule, student.getSubjects());
@@ -47,6 +64,9 @@ public class MainWindow extends JFrame {
         setLocationRelativeTo(null);
         setLayout(new BorderLayout());
         getContentPane().setBackground(BG_COLOR);
+
+        // Register theme listener
+        ThemeManager.addThemeChangeListener(this);
 
         // ── Header ──
         JPanel headerPanel = new JPanel(new BorderLayout());
@@ -71,6 +91,21 @@ public class MainWindow extends JFrame {
         addSubjectBtn.setCursor(new Cursor(Cursor.HAND_CURSOR));
         addSubjectBtn.setBorder(BorderFactory.createEmptyBorder(8, 16, 8, 16));
         addSubjectBtn.addActionListener(this::showAddSubjectDialog);
+
+        // Theme toggle button
+        JButton themeToggleBtn = new JButton(ThemeManager.getToggleLabel());
+        themeToggleBtn.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        themeToggleBtn.setBackground(SURFACE);
+        themeToggleBtn.setForeground(TEXT_COLOR);
+        themeToggleBtn.setFocusPainted(false);
+        themeToggleBtn.setOpaque(true);
+        themeToggleBtn.setBorderPainted(false);
+        themeToggleBtn.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        themeToggleBtn.setBorder(BorderFactory.createEmptyBorder(8, 12, 8, 12));
+        themeToggleBtn.addActionListener(e -> {
+            ThemeManager.toggleTheme();
+            ThemeManager.saveTheme(student.getId());
+        });
 
         JButton logoutBtn = new JButton("🚪 Logout");
         logoutBtn.setFont(new Font("Segoe UI", Font.BOLD, 13));
@@ -104,6 +139,7 @@ public class MainWindow extends JFrame {
         headerRight.setOpaque(false);
         headerRight.add(userLabel);
         headerRight.add(addSubjectBtn);
+        headerRight.add(themeToggleBtn);
         headerRight.add(logoutBtn);
 
         headerPanel.add(titleLabel, BorderLayout.WEST);
@@ -941,5 +977,16 @@ public class MainWindow extends JFrame {
         f.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createLineBorder(new Color(88, 91, 112), 1),
                 BorderFactory.createEmptyBorder(6, 8, 6, 8)));
+    }
+
+    @Override
+    public void onThemeChanged(boolean isDarkMode) {
+        // Rebuild the entire window with new theme colors
+        ThemeManager.removeThemeChangeListener(this);
+        dispose();
+        SwingUtilities.invokeLater(() -> {
+            MainWindow newWindow = new MainWindow(student);
+            newWindow.setVisible(true);
+        });
     }
 }
