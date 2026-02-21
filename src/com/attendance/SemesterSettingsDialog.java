@@ -123,9 +123,23 @@ public class SemesterSettingsDialog extends JDialog {
         resetBtn.setBorder(BorderFactory.createEmptyBorder(10, 25, 10, 25));
 
         resetBtn.addActionListener(e -> {
+            String warningMessage = "<html><body style='width:320px;'>"
+                    + "<b>⚠️ Are you sure you want to reset ALL semester dates?</b><br><br>"
+                    + "This will clear all 4 fields:<br>"
+                    + "&nbsp;&nbsp;• Semester Start Date<br>"
+                    + "&nbsp;&nbsp;• Mid-Sem Exam Start Date<br>"
+                    + "&nbsp;&nbsp;• Mid-Sem Exam End Date<br>"
+                    + "&nbsp;&nbsp;• Last Teaching Day<br><br>"
+                    + "<b>Side effects:</b><br>"
+                    + "&nbsp;&nbsp;• Safe-bunk calculations will stop working<br>"
+                    + "&nbsp;&nbsp;• Remaining-class counts will be unavailable<br>"
+                    + "&nbsp;&nbsp;• Critical attendance warnings (\"max possible < 75%\") will be disabled<br>"
+                    + "&nbsp;&nbsp;• Leave predictions will lose accuracy<br><br>"
+                    + "<i>You can reconfigure these dates at any time.</i>"
+                    + "</body></html>";
             int choice = JOptionPane.showConfirmDialog(this,
-                    "Reset all semester dates? This will clear all 4 fields.",
-                    "Confirm Reset", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+                    warningMessage,
+                    "⚠️ Confirm Reset — Side Effects", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
             if (choice == JOptionPane.YES_OPTION) {
                 startField.setText("");
                 midStartField.setText("");
