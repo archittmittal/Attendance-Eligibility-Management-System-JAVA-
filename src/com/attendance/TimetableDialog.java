@@ -14,14 +14,14 @@ import java.util.List;
  */
 public class TimetableDialog extends JDialog {
 
-    // Colors (match existing Catppuccin dark theme)
-    private static final Color BG_COLOR = new Color(30, 30, 46);
-    private static final Color CARD_COLOR = new Color(49, 50, 68);
-    private static final Color HEADER_COLOR = new Color(24, 24, 37);
-    private static final Color ACCENT_COLOR = new Color(137, 180, 250);
-    private static final Color TEXT_COLOR = new Color(205, 214, 244);
-    private static final Color SUBTEXT_COLOR = new Color(147, 153, 178);
-    private static final Color SURFACE = new Color(69, 71, 90);
+    // Colors (resolved via ThemeManager for dark/light support)
+    private final Color BG_COLOR = ThemeManager.getBgColor();
+    private final Color CARD_COLOR = ThemeManager.getCardColor();
+    private final Color HEADER_COLOR = ThemeManager.getHeaderColor();
+    private final Color ACCENT_COLOR = ThemeManager.getAccentColor();
+    private final Color TEXT_COLOR = ThemeManager.getTextColor();
+    private final Color SUBTEXT_COLOR = ThemeManager.getSubtextColor();
+    private final Color SURFACE = ThemeManager.getSurfaceColor();
 
     // Subject colors for visual distinction
     private static final Color[] SUBJECT_COLORS = {

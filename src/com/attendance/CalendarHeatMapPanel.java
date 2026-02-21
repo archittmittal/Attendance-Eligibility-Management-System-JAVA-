@@ -26,16 +26,16 @@ import java.util.Map;
  */
 public class CalendarHeatMapPanel extends JPanel {
 
-    // Colors (Catppuccin dark theme)
-    private static final Color BG_COLOR = new Color(30, 30, 46);
-    private static final Color HEADER_COLOR = new Color(24, 24, 37);
-    private static final Color ACCENT_COLOR = new Color(137, 180, 250);
-    private static final Color TEXT_COLOR = new Color(205, 214, 244);
-    private static final Color SUBTEXT_COLOR = new Color(147, 153, 178);
-    private static final Color SURFACE = new Color(69, 71, 90);
-    private static final Color GREEN = new Color(166, 227, 161);
-    private static final Color RED = new Color(243, 139, 168);
-    private static final Color YELLOW = new Color(249, 226, 175);
+    // Colors (resolved via ThemeManager for dark/light support)
+    private final Color BG_COLOR = ThemeManager.getBgColor();
+    private final Color HEADER_COLOR = ThemeManager.getHeaderColor();
+    private final Color ACCENT_COLOR = ThemeManager.getAccentColor();
+    private final Color TEXT_COLOR = ThemeManager.getTextColor();
+    private final Color SUBTEXT_COLOR = ThemeManager.getSubtextColor();
+    private final Color SURFACE = ThemeManager.getSurfaceColor();
+    private final Color GREEN = ThemeManager.getGreenColor();
+    private final Color RED = ThemeManager.getRedColor();
+    private final Color YELLOW = ThemeManager.getYellowColor();
 
     private static final int CELL_SIZE = 40;
     private static final int CELL_GAP = 4;
