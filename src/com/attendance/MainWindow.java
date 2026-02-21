@@ -121,6 +121,7 @@ public class MainWindow extends JFrame implements ThemeManager.ThemeChangeListen
                     "Are you sure you want to logout?",
                     "Confirm Logout", JOptionPane.YES_NO_OPTION);
             if (choice == JOptionPane.YES_OPTION) {
+                ThemeManager.removeThemeChangeListener(this);
                 dispose();
                 SwingUtilities.invokeLater(() -> {
                     LoginDialog loginDialog = new LoginDialog(null);

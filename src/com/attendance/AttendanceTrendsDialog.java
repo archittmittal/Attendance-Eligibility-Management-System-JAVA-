@@ -21,15 +21,15 @@ import java.util.List;
  */
 public class AttendanceTrendsDialog extends JDialog {
 
-    // Colors (Catppuccin dark theme)
-    private static final Color BG_COLOR = new Color(30, 30, 46);
-    private static final Color CARD_COLOR = new Color(49, 50, 68);
-    private static final Color HEADER_COLOR = new Color(24, 24, 37);
-    private static final Color ACCENT_COLOR = new Color(137, 180, 250);
-    private static final Color TEXT_COLOR = new Color(205, 214, 244);
-    private static final Color SUBTEXT_COLOR = new Color(147, 153, 178);
-    private static final Color SURFACE = new Color(69, 71, 90);
-    private static final Color RED = new Color(243, 139, 168);
+    // Colors (resolved via ThemeManager for dark/light support)
+    private static final Color BG_COLOR = ThemeManager.getBgColor();
+    private static final Color CARD_COLOR = ThemeManager.getCardColor();
+    private static final Color HEADER_COLOR = ThemeManager.getHeaderColor();
+    private static final Color ACCENT_COLOR = ThemeManager.getAccentColor();
+    private static final Color TEXT_COLOR = ThemeManager.getTextColor();
+    private static final Color SUBTEXT_COLOR = ThemeManager.getSubtextColor();
+    private static final Color SURFACE = ThemeManager.getSurfaceColor();
+    private static final Color RED = ThemeManager.getRedColor();
 
     // Subject line colors
     private static final Color[] LINE_COLORS = {
@@ -250,7 +250,7 @@ public class AttendanceTrendsDialog extends JDialog {
             int colorIdx = 0;
             for (Subject subject : subjects) {
                 List<double[]> points = weeklyData.get(subject);
-                if (points == null || points.size() < 2) {
+                if (points == null || points.isEmpty()) {
                     colorIdx++;
                     continue;
                 }
@@ -258,21 +258,24 @@ public class AttendanceTrendsDialog extends JDialog {
                 Color lineColor = LINE_COLORS[colorIdx % LINE_COLORS.length];
                 g2.setColor(lineColor);
 
-                Path2D.Double path = new Path2D.Double();
-                boolean first = true;
-                for (double[] p : points) {
-                    int x = chartLeft + (int) (p[0] / maxWeek * chartWidth);
-                    int y = chartBottom - (int) (p[1] / 100.0 * chartHeight);
-                    if (first) {
-                        path.moveTo(x, y);
-                        first = false;
-                    } else {
-                        path.lineTo(x, y);
+                // Draw line if multiple points
+                if (points.size() >= 2) {
+                    Path2D.Double path = new Path2D.Double();
+                    boolean first = true;
+                    for (double[] p : points) {
+                        int x = chartLeft + (int) (p[0] / maxWeek * chartWidth);
+                        int y = chartBottom - (int) (p[1] / 100.0 * chartHeight);
+                        if (first) {
+                            path.moveTo(x, y);
+                            first = false;
+                        } else {
+                            path.lineTo(x, y);
+                        }
                     }
+                    g2.draw(path);
                 }
-                g2.draw(path);
 
-                // Draw dots at each data point
+                // Draw dots at each data point (including single-point subjects)
                 for (double[] p : points) {
                     int x = chartLeft + (int) (p[0] / maxWeek * chartWidth);
                     int y = chartBottom - (int) (p[1] / 100.0 * chartHeight);
@@ -332,32 +335,30 @@ public class AttendanceTrendsDialog extends JDialog {
          * Compute an overall combined attendance trend.
          */
         private List<double[]> computeOverallTrend() {
-            // Merge all records from all subjects, group by week
+            // Find the global earliest date across all subjects first
+            LocalDate refDate = null;
+            for (Subject subject : subjects) {
+                for (AttendanceRecord record : subject.getAttendanceHistory()) {
+                    if (record.getDate() != null) {
+                        if (refDate == null || record.getDate().isBefore(refDate)) {
+                            refDate = record.getDate();
+                        }
+                    }
+                }
+            }
+
+            if (refDate == null) {
+                return new ArrayList<>();
+            }
+
+            // Merge all records, group by week relative to global refDate
             TreeMap<Integer, int[]> weekMap = new TreeMap<>(); // week -> [attended, conducted]
 
             for (Subject subject : subjects) {
                 List<AttendanceRecord> records = subject.getAttendanceHistory();
-                if (records.isEmpty())
-                    continue;
-
-                List<AttendanceRecord> sorted = new ArrayList<>(records);
-                sorted.sort(Comparator.comparing(r -> r.getDate() != null ? r.getDate() : LocalDate.MIN));
-                sorted.removeIf(r -> r.getDate() == null);
-                if (sorted.isEmpty())
-                    continue;
-
-                // Use earliest date across all subjects as reference
-                LocalDate refDate = sorted.get(0).getDate();
-                for (Subject s2 : subjects) {
-                    List<AttendanceRecord> recs2 = s2.getAttendanceHistory();
-                    for (AttendanceRecord r : recs2) {
-                        if (r.getDate() != null && r.getDate().isBefore(refDate)) {
-                            refDate = r.getDate();
-                        }
-                    }
-                }
-
-                for (AttendanceRecord record : sorted) {
+                for (AttendanceRecord record : records) {
+                    if (record.getDate() == null)
+                        continue;
                     int week = (int) ChronoUnit.WEEKS.between(refDate, record.getDate());
                     weekMap.computeIfAbsent(week, k -> new int[] { 0, 0 });
                     weekMap.get(week)[1]++;

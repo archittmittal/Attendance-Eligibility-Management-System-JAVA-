@@ -312,16 +312,27 @@ public class ExportManager {
             StringBuilder content = new StringBuilder();
             content.append("BT\n");
 
-            int y = 750; // Start from top
+            int y = 750; // Start from top (absolute position for first line)
+            boolean firstLine = true;
+            int prevY = 0;
             for (int i = 0; i < textLines.size(); i++) {
                 int fontSize = fontSpecs.get(i)[0];
                 boolean bold = fontSpecs.get(i)[1] == 1;
                 String fontName = bold ? "/F2" : "/F1";
 
                 content.append(fontName).append(" ").append(fontSize).append(" Tf\n");
-                content.append("36 ").append(y).append(" Td\n");
+                if (firstLine) {
+                    // First line: absolute position
+                    content.append("36 ").append(y).append(" Td\n");
+                    firstLine = false;
+                } else {
+                    // Subsequent lines: relative displacement from previous position
+                    int dy = y - prevY;
+                    content.append("0 ").append(dy).append(" Td\n");
+                }
                 content.append("(").append(escapePDF(textLines.get(i))).append(") Tj\n");
 
+                prevY = y;
                 y -= (fontSize + 4);
                 if (y < 50)
                     break; // Page boundary
