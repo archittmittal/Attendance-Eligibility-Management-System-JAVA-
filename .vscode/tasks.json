@@ -1,0 +1,15 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Build and Run AttendanceApp",
+			"type": "shell",
+			"command": "javac -cp \"lib/mysql-connector-j-9.1.0.jar:src\" -d out src/com/attendance/*.java && java -cp \"lib/mysql-connector-j-9.1.0.jar:out\" com.attendance.AttendanceApp",
+			"isBackground": false,
+			"problemMatcher": [
+				"$javac"
+			],
+			"group": "build"
+		}
+	]
+}
