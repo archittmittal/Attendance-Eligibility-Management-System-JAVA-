@@ -14,5 +14,7 @@ out/
 # OS files
 .DS_Store
 Thumbs.db
-out/
-bin/
+
+# Project-specific ignores
+*.log
+lib/mysql-connector-java.jar
