@@ -1,6 +1,24 @@
 # Attendance Eligibility Management System
 
-A comprehensive Java-based Project-Based Learning (PBL) system designed to help students and institutions manage and track attendance eligibility according to the 75% attendance rule. This system provides real-time calculations for both overall and subject-wise attendance, helping students make informed decisions about class attendance.
+A comprehensive Java-based Project-Based Learning (PBL) system designed to help students and institutions manage and track attendance eligibility according to the 75% attendance rule.
+
+## 🚀 Quick Start (Terminal)
+
+### Main Entry File
+The main application class is `com.attendance.AttendanceApp` located at:
+[src/com/attendance/AttendanceApp.java](file:///Users/architmittal/Desktop/CODE/ATTENDANCE%20MANAGEMEMT%20JAVA%20PBL/Attendance-Eligibility-Management-System-JAVA-/src/com/attendance/AttendanceApp.java)
+
+### Run Commands
+1. **Compile**:
+   ```bash
+   javac -cp "lib/mysql-connector-j-9.1.0.jar:src" -d out src/com/attendance/*.java
+   ```
+2. **Run**:
+   ```bash
+   java -cp "lib/mysql-connector-j-9.1.0.jar:out" com.attendance.AttendanceApp
+   ```
+
+---
 
 ## 📋 Overview
 
@@ -229,13 +247,17 @@ java -cp "lib\mysql-connector-j-9.1.0.jar;out" com.attendance.AttendanceApp
 javac -cp "lib/mysql-connector-j-9.1.0.jar:src" -d out src/com/attendance/*.java && java -cp "lib/mysql-connector-j-9.1.0.jar:out" com.attendance.AttendanceApp
 ```
 
-### Step 4: Using an IDE
-- Import the project as a Java project
-- Add `lib/mysql-connector-j-9.1.0.jar` to the build path
-- Set `com.attendance.AttendanceApp` as the main class
-- Build and run
+### Step 4: Using VSCode (Recommended)
+This repository includes pre-configured VSCode settings for seamless development.
+- **Run/Debug**: Open `src/com/attendance/AttendanceApp.java` and click the **Run** or **Debug** button appearing above the `main` method.
+- **Build Task**: Press `Cmd+Shift+B` (macOS) or `Ctrl+Shift+B` (Windows) to execute the pre-configured **Build and Run** task.
 
-### Step 5: First Launch
+### Step 5: Using other IDEs
+- Import the project as a Java project.
+- Ensure all JAR files in the `lib/` folder are added to your project's **Build Path** / **Referenced Libraries**.
+- Set `com.attendance.AttendanceApp` as the **Main Class**.
+
+### Step 6: First Launch
 - On first launch, you'll see the **Login** screen
 - Click the **Register** tab to create a new account
 - After logging in, configure your **Semester Settings** when prompted
