@@ -1,12 +1,12 @@
 package com.attendance;
 
-import javax.swing.*;
 import java.awt.*;
 import java.awt.geom.Path2D;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.List;
+import javax.swing.*;
 
 /**
  * Attendance Trends Dialog — Displays weekly attendance trend line chart.
@@ -30,6 +30,8 @@ public class AttendanceTrendsDialog extends JDialog {
     private static final Color SUBTEXT_COLOR = ThemeManager.getSubtextColor();
     private static final Color SURFACE = ThemeManager.getSurfaceColor();
     private static final Color RED = ThemeManager.getRedColor();
+    private static final Color GREEN = ThemeManager.getGreenColor();
+    private static final Color YELLOW = ThemeManager.getYellowColor();
 
     // Subject line colors
     private static final Color[] LINE_COLORS = {
@@ -65,8 +67,31 @@ public class AttendanceTrendsDialog extends JDialog {
         List<Subject> subjects = student.getSubjects();
         Map<Subject, List<double[]>> weeklyData = computeWeeklyData(subjects);
 
+        // Calculate max week for sizing
+        int maxWeek = 1;
+        for (List<double[]> points : weeklyData.values()) {
+            for (double[] p : points) {
+                maxWeek = Math.max(maxWeek, (int) p[0]);
+            }
+        }
+        maxWeek = Math.max(maxWeek, 1);
+
+        // Calculate preferred width: enough space for all bars
+        int subjectCount = subjects.size();
+        int barWidth = Math.max(16, 32 - subjectCount); // wider bars for fewer subjects
+        int minBarSpacing = 6;
+        int chartWidth = (maxWeek + 1) * subjectCount * (barWidth + minBarSpacing) + 120;
+        int chartHeight = 400;
+
         ChartPanel chartPanel = new ChartPanel(subjects, weeklyData);
-        mainPanel.add(chartPanel, BorderLayout.CENTER);
+        chartPanel.setPreferredSize(new Dimension(chartWidth, chartHeight));
+
+        JScrollPane scrollPane = new JScrollPane(chartPanel,
+                JScrollPane.VERTICAL_SCROLLBAR_NEVER,
+                JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+        scrollPane.setBorder(null);
+        scrollPane.getViewport().setBackground(CARD_COLOR);
+        mainPanel.add(scrollPane, BorderLayout.CENTER);
 
         // ── Legend ──
         JPanel legendPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 15, 5));
@@ -230,12 +255,12 @@ public class AttendanceTrendsDialog extends JDialog {
             }
 
             // X-axis labels (week numbers)
-            g2.setFont(new Font("Segoe UI", Font.PLAIN, 10));
-            g2.setColor(SUBTEXT_COLOR);
+            g2.setFont(new Font("Segoe UI", Font.BOLD, 11));
+            g2.setColor(ACCENT_COLOR);
             int step = Math.max(1, maxWeek / 10);
             for (int w = 0; w <= maxWeek; w += step) {
                 int x = chartLeft + (int) ((double) w / maxWeek * chartWidth);
-                g2.drawString("W" + (w + 1), x - 8, chartBottom + 18);
+                g2.drawString("Week " + (w + 1), x - 16, chartBottom + 22);
             }
 
             // ── 75% Threshold Line ──
@@ -245,8 +270,9 @@ public class AttendanceTrendsDialog extends JDialog {
                     10.0f, new float[] { 6.0f, 4.0f }, 0.0f));
             g2.drawLine(chartLeft, threshY, chartRight, threshY);
 
-            // ── Subject Lines ──
-            g2.setStroke(new BasicStroke(2.5f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+            // ── Subject Bars ──
+            int subjectCount = subjects.size();
+            int barWidth = Math.max(8, chartWidth / (maxWeek * subjectCount + subjectCount));
             int colorIdx = 0;
             for (Subject subject : subjects) {
                 List<double[]> points = weeklyData.get(subject);
@@ -254,34 +280,24 @@ public class AttendanceTrendsDialog extends JDialog {
                     colorIdx++;
                     continue;
                 }
-
-                Color lineColor = LINE_COLORS[colorIdx % LINE_COLORS.length];
-                g2.setColor(lineColor);
-
-                // Draw line if multiple points
-                if (points.size() >= 2) {
-                    Path2D.Double path = new Path2D.Double();
-                    boolean first = true;
-                    for (double[] p : points) {
-                        int x = chartLeft + (int) (p[0] / maxWeek * chartWidth);
-                        int y = chartBottom - (int) (p[1] / 100.0 * chartHeight);
-                        if (first) {
-                            path.moveTo(x, y);
-                            first = false;
-                        } else {
-                            path.lineTo(x, y);
-                        }
-                    }
-                    g2.draw(path);
-                }
-
-                // Draw dots at each data point (including single-point subjects)
+                Color barColor = LINE_COLORS[colorIdx % LINE_COLORS.length];
                 for (double[] p : points) {
-                    int x = chartLeft + (int) (p[0] / maxWeek * chartWidth);
-                    int y = chartBottom - (int) (p[1] / 100.0 * chartHeight);
-                    g2.fillOval(x - 4, y - 4, 8, 8);
+                    int week = (int) p[0];
+                    double pct = p[1];
+                    int x = chartLeft + week * (barWidth * subjectCount + 4) + colorIdx * barWidth;
+                    int y = chartBottom - (int) (pct / 100.0 * chartHeight);
+                    int height = chartBottom - y;
+                    // Color code: green if >=75, yellow if 60-75, red if <60
+                    Color statusColor = pct >= 75 ? GREEN : (pct >= 60 ? YELLOW : RED);
+                    g2.setColor(barColor);
+                    g2.fillRect(x, y, barWidth, height);
+                    g2.setColor(statusColor);
+                    g2.drawRect(x, y, barWidth, height);
+                    // Value label
+                    g2.setFont(new Font("Segoe UI", Font.BOLD, 11));
+                    g2.setColor(barColor);
+                    g2.drawString(String.format("%.1f%%", pct), x + 2, y - 6);
                 }
-
                 colorIdx++;
             }
 
@@ -306,10 +322,17 @@ public class AttendanceTrendsDialog extends JDialog {
             }
 
             // ── Axes ──
-            g2.setColor(SUBTEXT_COLOR);
-            g2.setStroke(new BasicStroke(1.5f));
+            g2.setColor(ACCENT_COLOR);
+            g2.setStroke(new BasicStroke(2f));
             g2.drawLine(chartLeft, chartTop, chartLeft, chartBottom);
             g2.drawLine(chartLeft, chartBottom, chartRight, chartBottom);
+            // Axis labels
+            g2.setFont(new Font("Segoe UI", Font.BOLD, 13));
+            g2.setColor(HEADER_COLOR);
+            g2.drawString("Weeks", (chartLeft + chartRight) / 2 - 30, chartBottom + 40);
+            g2.rotate(-Math.PI / 2);
+            g2.drawString("Attendance %", -((chartTop + chartBottom) / 2 + 40), chartLeft - 50);
+            g2.rotate(Math.PI / 2);
 
             // ── Tooltip ──
             if (tooltipText != null) {

@@ -10,6 +10,13 @@
 				"$javac"
 			],
 			"group": "build"
+		},
+		{
+			"label": "Run Attendance Manager Java App",
+			"type": "shell",
+			"command": "java -cp bin com.attendance.MainWindow",
+			"isBackground": false,
+			"group": "build"
 		}
 	]
 }
