@@ -21,15 +21,15 @@ public class SubjectDetailDialog extends JDialog {
     private boolean changed = false;
 
     // Colors
-    private static final Color BG_COLOR = new Color(30, 30, 46);
-    private static final Color CARD_COLOR = new Color(49, 50, 68);
-    private static final Color ACCENT_COLOR = new Color(137, 180, 250);
-    private static final Color TEXT_COLOR = new Color(205, 214, 244);
-    private static final Color SUBTEXT_COLOR = new Color(147, 153, 178);
-    private static final Color FIELD_BG = new Color(69, 71, 90);
-    private static final Color GREEN = new Color(166, 227, 161);
-    private static final Color RED = new Color(243, 139, 168);
-    private static final Color SURFACE = new Color(69, 71, 90);
+    private final Color BG_COLOR = ThemeManager.getBgColor();
+    private final Color CARD_COLOR = ThemeManager.getCardColor();
+    private final Color ACCENT_COLOR = ThemeManager.getAccentColor();
+    private final Color TEXT_COLOR = ThemeManager.getTextColor();
+    private final Color SUBTEXT_COLOR = ThemeManager.getSubtextColor();
+    private final Color FIELD_BG = ThemeManager.getFieldBgColor();
+    private final Color GREEN = ThemeManager.getGreenColor();
+    private final Color RED = ThemeManager.getRedColor();
+    private final Color SURFACE = ThemeManager.getSurfaceColor();
 
     private static final DateTimeFormatter DATE_FMT = DateTimeFormatter.ofPattern("yyyy-MM-dd (EEE)");
 
@@ -53,14 +53,12 @@ public class SubjectDetailDialog extends JDialog {
         nameLabel.setForeground(SUBTEXT_COLOR);
         nameLabel.setFont(new Font("Segoe UI", Font.PLAIN, 13));
 
-        JTextField nameField = new JTextField(subject.getName());
+        JTextField nameField = new UIUtils.RoundedTextField(15, 8);
+        nameField.setText(subject.getName());
         nameField.setBackground(FIELD_BG);
         nameField.setForeground(TEXT_COLOR);
         nameField.setCaretColor(TEXT_COLOR);
         nameField.setFont(new Font("Segoe UI", Font.BOLD, 16));
-        nameField.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(new Color(88, 91, 112)),
-                BorderFactory.createEmptyBorder(6, 8, 6, 8)));
 
         JButton renameBtn = createSmallButton("Rename", ACCENT_COLOR, BG_COLOR);
         renameBtn.addActionListener(e -> {
@@ -108,7 +106,7 @@ public class SubjectDetailDialog extends JDialog {
         table.setSelectionForeground(ACCENT_COLOR);
         table.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         table.setRowHeight(30);
-        table.getTableHeader().setBackground(new Color(24, 24, 37));
+        table.getTableHeader().setBackground(ThemeManager.getHeaderColor());
         table.getTableHeader().setForeground(TEXT_COLOR);
         table.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 12));
 
@@ -232,16 +230,13 @@ public class SubjectDetailDialog extends JDialog {
         JPanel addRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
         addRow.setOpaque(false);
 
-        JTextField dateField = new JTextField(LocalDate.now().toString(), 10);
+        JTextField dateField = new UIUtils.RoundedTextField(10, 8);
+        dateField.setText(LocalDate.now().toString());
         dateField.setBackground(FIELD_BG);
         dateField.setForeground(TEXT_COLOR);
         dateField.setEditable(false);
         dateField.setCursor(new Cursor(Cursor.HAND_CURSOR));
         dateField.setCaretColor(TEXT_COLOR);
-        dateField.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        dateField.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(new Color(88, 91, 112)),
-                BorderFactory.createEmptyBorder(5, 6, 5, 6)));
 
         JButton addPresentBtn = createSmallButton("+ Present", GREEN, BG_COLOR);
         JButton addAbsentBtn = createSmallButton("+ Absent", RED, BG_COLOR);
@@ -396,16 +391,7 @@ public class SubjectDetailDialog extends JDialog {
     }
 
     private JButton createSmallButton(String text, Color bg, Color fg) {
-        JButton btn = new JButton(text);
-        btn.setFont(new Font("Segoe UI", Font.BOLD, 11));
-        btn.setBackground(bg);
-        btn.setForeground(fg);
-        btn.setFocusPainted(false);
-        btn.setOpaque(true);
-        btn.setBorderPainted(false);
-        btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        btn.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10));
-        return btn;
+        return new UIUtils.RoundedButton(text, bg, fg, 8);
     }
 
     private JLabel createLegendDot(String text, Color color) {
@@ -423,14 +409,8 @@ public class SubjectDetailDialog extends JDialog {
         JPanel p = new JPanel(new BorderLayout(5, 0));
         p.setBackground(BG_COLOR);
 
-        JButton btn = new JButton("📅");
-        btn.setBackground(new Color(24, 24, 37)); // Match HEADER_COLOR
-        btn.setForeground(ACCENT_COLOR);
-        btn.setFocusPainted(false);
-        btn.setOpaque(true);
-        btn.setBorderPainted(false);
-        btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        btn.setBorder(BorderFactory.createEmptyBorder(0, 10, 0, 10));
+        JButton btn = new UIUtils.RoundedButton("📅", ThemeManager.getHeaderColor(), ACCENT_COLOR, 8);
+        btn.setFont(new Font("Segoe UI", Font.PLAIN, 16));
 
         btn.addActionListener(e -> {
             LocalDate current = null;

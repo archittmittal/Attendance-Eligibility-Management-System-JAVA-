@@ -18,16 +18,16 @@ public class ManageHolidaysDialog extends JDialog {
     private Student student;
     private DefaultTableModel tableModel;
 
-    // Colors (dark theme)
-    private static final Color BG_COLOR = new Color(30, 30, 46);
-    private static final Color CARD_COLOR = new Color(49, 50, 68);
-    private static final Color ACCENT_COLOR = new Color(137, 180, 250);
-    private static final Color TEXT_COLOR = new Color(205, 214, 244);
-    private static final Color FIELD_BG = new Color(69, 71, 90);
-    private static final Color ERROR_COLOR = new Color(243, 139, 168);
-    private static final Color SUCCESS_COLOR = new Color(166, 227, 161);
-    private static final Color SURFACE = new Color(69, 71, 90);
-    private static final Color WARN_COLOR = new Color(249, 226, 175);
+    // Colors
+    private final Color BG_COLOR = ThemeManager.getBgColor();
+    private final Color CARD_COLOR = ThemeManager.getCardColor();
+    private final Color ACCENT_COLOR = ThemeManager.getAccentColor();
+    private final Color TEXT_COLOR = ThemeManager.getTextColor();
+    private final Color FIELD_BG = ThemeManager.getFieldBgColor();
+    private final Color ERROR_COLOR = ThemeManager.getRedColor();
+    private final Color SUCCESS_COLOR = ThemeManager.getGreenColor();
+    private final Color SURFACE = ThemeManager.getSurfaceColor();
+    private final Color WARN_COLOR = ThemeManager.getYellowColor();
 
     public ManageHolidaysDialog(Frame owner, Student student) {
         super(owner, "Manage Academic Calendar", true);
@@ -109,7 +109,7 @@ public class ManageHolidaysDialog extends JDialog {
 
         JButton addSingleBtn = createButton("+ Add Holiday", SUCCESS_COLOR);
         JButton addGroupBtn = createButton("+ Add Group Holiday", ACCENT_COLOR);
-        JButton editBtn = createButton("✏ Edit Selected", new Color(180, 190, 254));
+        JButton editBtn = createButton("✏ Edit Selected", ThemeManager.isDarkMode() ? new Color(180, 190, 254) : new Color(30, 58, 138));
         JButton removeBtn = createButton("Remove Selected", ERROR_COLOR);
         JButton removeGroupBtn = createButton("Remove Group", WARN_COLOR);
 
@@ -370,28 +370,20 @@ public class ManageHolidaysDialog extends JDialog {
     }
 
     private JTextField createTextField(int columns) {
-        JTextField f = new JTextField(columns);
+        JTextField f = new UIUtils.RoundedTextField(columns, 10);
         f.setBackground(FIELD_BG);
         f.setForeground(TEXT_COLOR);
         f.setCaretColor(TEXT_COLOR);
-        f.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        f.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(new Color(88, 91, 112)),
-                BorderFactory.createEmptyBorder(5, 8, 5, 8)));
         return f;
     }
 
     private JTextField createDateField(String text) {
-        JTextField f = new JTextField(10);
+        JTextField f = new UIUtils.RoundedTextField(10, 10);
         f.setBackground(FIELD_BG);
         f.setForeground(TEXT_COLOR);
         f.setEditable(false);
         f.setCursor(new Cursor(Cursor.HAND_CURSOR));
         f.setCaretColor(TEXT_COLOR);
-        f.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        f.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(new Color(88, 91, 112)),
-                BorderFactory.createEmptyBorder(5, 8, 5, 8)));
         f.setText(text);
         return f;
     }
@@ -400,14 +392,8 @@ public class ManageHolidaysDialog extends JDialog {
         JPanel p = new JPanel(new BorderLayout(5, 0));
         p.setBackground(BG_COLOR); // Use BG_COLOR as it's added to inputPanel which is BG_COLOR
 
-        JButton btn = new JButton("📅");
-        btn.setBackground(new Color(24, 24, 37)); // Match HEADER_COLOR
-        btn.setForeground(ACCENT_COLOR);
-        btn.setFocusPainted(false);
-        btn.setOpaque(true);
-        btn.setBorderPainted(false);
-        btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        btn.setBorder(BorderFactory.createEmptyBorder(0, 10, 0, 10));
+        JButton btn = new UIUtils.RoundedButton("📅", ThemeManager.getHeaderColor(), ACCENT_COLOR, 10);
+        btn.setFont(new Font("Segoe UI", Font.PLAIN, 16));
 
         btn.addActionListener(e -> {
             LocalDate current = null;
@@ -436,15 +422,6 @@ public class ManageHolidaysDialog extends JDialog {
     }
 
     private JButton createButton(String text, Color bgColor) {
-        JButton btn = new JButton(text);
-        btn.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        btn.setBackground(bgColor);
-        btn.setForeground(BG_COLOR);
-        btn.setFocusPainted(false);
-        btn.setOpaque(true);
-        btn.setBorderPainted(false);
-        btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        btn.setBorder(BorderFactory.createEmptyBorder(7, 14, 7, 14));
-        return btn;
+        return new UIUtils.RoundedButton(text, bgColor, ThemeManager.getBgColor(), 10);
     }
 }

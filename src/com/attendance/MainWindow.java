@@ -1,12 +1,12 @@
 package com.attendance;
 
-import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import javax.swing.*;
 
 /**
  * Main application dashboard.
@@ -81,41 +81,17 @@ public class MainWindow extends JFrame implements ThemeManager.ThemeChangeListen
         userLabel.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         userLabel.setForeground(SUBTEXT_COLOR);
 
-        JButton addSubjectBtn = new JButton("+ Add Subject");
-        addSubjectBtn.setFont(new Font("Segoe UI", Font.BOLD, 13));
-        addSubjectBtn.setBackground(ACCENT_COLOR);
-        addSubjectBtn.setForeground(HEADER_COLOR);
-        addSubjectBtn.setFocusPainted(false);
-        addSubjectBtn.setOpaque(true);
-        addSubjectBtn.setBorderPainted(false);
-        addSubjectBtn.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        addSubjectBtn.setBorder(BorderFactory.createEmptyBorder(8, 16, 8, 16));
+        JButton addSubjectBtn = new UIUtils.RoundedButton("+ Add Subject", ACCENT_COLOR, HEADER_COLOR, 12);
         addSubjectBtn.addActionListener(this::showAddSubjectDialog);
 
         // Theme toggle button
-        JButton themeToggleBtn = new JButton(ThemeManager.getToggleLabel());
-        themeToggleBtn.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        themeToggleBtn.setBackground(SURFACE);
-        themeToggleBtn.setForeground(TEXT_COLOR);
-        themeToggleBtn.setFocusPainted(false);
-        themeToggleBtn.setOpaque(true);
-        themeToggleBtn.setBorderPainted(false);
-        themeToggleBtn.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        themeToggleBtn.setBorder(BorderFactory.createEmptyBorder(8, 12, 8, 12));
+        JButton themeToggleBtn = new UIUtils.RoundedButton(ThemeManager.getToggleLabel(), SURFACE, TEXT_COLOR, 12);
         themeToggleBtn.addActionListener(e -> {
             ThemeManager.toggleTheme();
             ThemeManager.saveTheme(student.getId());
         });
 
-        JButton logoutBtn = new JButton("🚪 Logout");
-        logoutBtn.setFont(new Font("Segoe UI", Font.BOLD, 13));
-        logoutBtn.setBackground(new Color(243, 139, 168));
-        logoutBtn.setForeground(HEADER_COLOR);
-        logoutBtn.setFocusPainted(false);
-        logoutBtn.setOpaque(true);
-        logoutBtn.setBorderPainted(false);
-        logoutBtn.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        logoutBtn.setBorder(BorderFactory.createEmptyBorder(8, 16, 8, 16));
+        JButton logoutBtn = new UIUtils.RoundedButton("🚪 Logout", RED, HEADER_COLOR, 12);
         logoutBtn.addActionListener(e -> {
             int choice = JOptionPane.showConfirmDialog(this,
                     "Are you sure you want to logout?",
@@ -205,11 +181,11 @@ public class MainWindow extends JFrame implements ThemeManager.ThemeChangeListen
         csvItem.setBackground(new Color(49, 50, 68));
         csvItem.setForeground(TEXT_COLOR);
         csvItem.addActionListener(ev -> ExportManager.exportCSV(this, student));
-        JMenuItem pdfItem = new JMenuItem("📑 Export as PDF");
+        JMenuItem pdfItem = new JMenuItem("📑 Export Formal Report");
         pdfItem.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         pdfItem.setBackground(new Color(49, 50, 68));
         pdfItem.setForeground(TEXT_COLOR);
-        pdfItem.addActionListener(ev -> ExportManager.exportPDF(this, student));
+        pdfItem.addActionListener(ev -> ExportManager.exportFormalReport(this, student));
         exportMenu.add(csvItem);
         exportMenu.add(pdfItem);
         exportBtn.addActionListener(ev -> exportMenu.show(exportBtn, 0, -exportMenu.getPreferredSize().height));
@@ -235,16 +211,8 @@ public class MainWindow extends JFrame implements ThemeManager.ThemeChangeListen
     }
 
     private JButton createFooterButton(String text, java.awt.event.ActionListener action) {
-        JButton btn = new JButton(text);
-        btn.setFont(new Font("Segoe UI", Font.BOLD, 13));
-        btn.setBackground(SURFACE);
-        btn.setForeground(TEXT_COLOR);
-        btn.setFocusPainted(false);
-        btn.setOpaque(true);
-        btn.setBorderPainted(false);
-        btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        btn.setBorder(BorderFactory.createEmptyBorder(8, 16, 8, 16));
-        btn.addActionListener(action);
+        JButton btn = new UIUtils.RoundedButton(text, SURFACE, TEXT_COLOR, 12);
+        if (action != null) btn.addActionListener(action);
         return btn;
     }
 
@@ -416,25 +384,11 @@ public class MainWindow extends JFrame implements ThemeManager.ThemeChangeListen
         JPanel markPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 5, 0));
         markPanel.setOpaque(false);
 
-        JButton attendedBtn = new JButton("✅ Present");
+        JButton attendedBtn = new UIUtils.RoundedButton("✅ Present", GREEN, HEADER_COLOR, 8);
         attendedBtn.setFont(new Font("Segoe UI", Font.BOLD, 11));
-        attendedBtn.setBackground(GREEN);
-        attendedBtn.setForeground(HEADER_COLOR);
-        attendedBtn.setFocusPainted(false);
-        attendedBtn.setOpaque(true);
-        attendedBtn.setBorderPainted(false);
-        attendedBtn.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        attendedBtn.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10));
 
-        JButton missedBtn = new JButton("❌ Absent");
+        JButton missedBtn = new UIUtils.RoundedButton("❌ Absent", RED, HEADER_COLOR, 8);
         missedBtn.setFont(new Font("Segoe UI", Font.BOLD, 11));
-        missedBtn.setBackground(RED);
-        missedBtn.setForeground(HEADER_COLOR);
-        missedBtn.setFocusPainted(false);
-        missedBtn.setOpaque(true);
-        missedBtn.setBorderPainted(false);
-        missedBtn.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        missedBtn.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10));
 
         attendedBtn.addActionListener(e -> markAttendance(subject, true));
         missedBtn.addActionListener(e -> markAttendance(subject, false));
@@ -446,27 +400,13 @@ public class MainWindow extends JFrame implements ThemeManager.ThemeChangeListen
         JPanel editPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 5, 3));
         editPanel.setOpaque(false);
 
-        JButton historyBtn = new JButton("📅 History / Past");
+        JButton historyBtn = new UIUtils.RoundedButton("📅 History / Past", SURFACE, TEXT_COLOR, 8);
         historyBtn.setFont(new Font("Segoe UI", Font.PLAIN, 11));
-        historyBtn.setBackground(SURFACE);
-        historyBtn.setForeground(TEXT_COLOR);
-        historyBtn.setFocusPainted(false);
-        historyBtn.setOpaque(true);
-        historyBtn.setBorderPainted(false);
-        historyBtn.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        historyBtn.setBorder(BorderFactory.createEmptyBorder(4, 8, 4, 8));
         historyBtn.setToolTipText("View attendance history, add past records, or rename subject");
         historyBtn.addActionListener(e -> showEditSubjectDialog(subject));
 
-        JButton deleteBtn = new JButton("🗑️ Delete");
+        JButton deleteBtn = new UIUtils.RoundedButton("🗑️ Delete", SURFACE, RED, 8);
         deleteBtn.setFont(new Font("Segoe UI", Font.PLAIN, 11));
-        deleteBtn.setBackground(SURFACE);
-        deleteBtn.setForeground(RED);
-        deleteBtn.setFocusPainted(false);
-        deleteBtn.setOpaque(true);
-        deleteBtn.setBorderPainted(false);
-        deleteBtn.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        deleteBtn.setBorder(BorderFactory.createEmptyBorder(4, 8, 4, 8));
         deleteBtn.addActionListener(e -> deleteSubject(subject));
 
         editPanel.add(historyBtn);
@@ -489,14 +429,8 @@ public class MainWindow extends JFrame implements ThemeManager.ThemeChangeListen
         msgLabel.setForeground(TEXT_COLOR);
         msgLabel.setFont(new Font("Segoe UI", Font.PLAIN, 13));
 
-        JButton undoBtn = new JButton("↩ Undo");
+        JButton undoBtn = new UIUtils.RoundedButton("↩ Undo", ACCENT_COLOR, HEADER_COLOR, 8);
         undoBtn.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        undoBtn.setBackground(ACCENT_COLOR);
-        undoBtn.setForeground(HEADER_COLOR);
-        undoBtn.setFocusPainted(false);
-        undoBtn.setBorderPainted(false);
-        undoBtn.setOpaque(true);
-        undoBtn.setCursor(new Cursor(Cursor.HAND_CURSOR));
 
         undoBtn.addActionListener(e -> handleUndo());
 
@@ -660,13 +594,10 @@ public class MainWindow extends JFrame implements ThemeManager.ThemeChangeListen
         JLabel nameLabel = new JLabel("Subject Name:");
         nameLabel.setForeground(TEXT_COLOR);
         nameLabel.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        JTextField nameField = new JTextField(15);
+        JTextField nameField = new UIUtils.RoundedTextField(15, 10);
         nameField.setBackground(SURFACE);
         nameField.setForeground(TEXT_COLOR);
         nameField.setCaretColor(TEXT_COLOR);
-        nameField.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(new Color(88, 91, 112)),
-                BorderFactory.createEmptyBorder(6, 8, 6, 8)));
 
         JLabel daysLabel = new JLabel("Class Days:");
         daysLabel.setForeground(TEXT_COLOR);
@@ -732,15 +663,7 @@ public class MainWindow extends JFrame implements ThemeManager.ThemeChangeListen
 
         mainPanel.add(inputPanel, BorderLayout.CENTER);
 
-        JButton saveBtn = new JButton("Save Subject");
-        saveBtn.setFont(new Font("Segoe UI", Font.BOLD, 14));
-        saveBtn.setBackground(ACCENT_COLOR);
-        saveBtn.setForeground(HEADER_COLOR);
-        saveBtn.setFocusPainted(false);
-        saveBtn.setOpaque(true);
-        saveBtn.setBorderPainted(false);
-        saveBtn.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        saveBtn.setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20));
+        JButton saveBtn = new UIUtils.RoundedButton("Save Subject", ACCENT_COLOR, HEADER_COLOR, 12);
 
         saveBtn.addActionListener(event -> {
             String name = nameField.getText().trim();

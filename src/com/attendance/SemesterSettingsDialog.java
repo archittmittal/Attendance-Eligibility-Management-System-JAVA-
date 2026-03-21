@@ -19,12 +19,12 @@ public class SemesterSettingsDialog extends JDialog {
     private boolean saved = false;
 
     // Colors
-    private static final Color BG_COLOR = new Color(30, 30, 46);
-    private static final Color CARD_COLOR = new Color(49, 50, 68);
-    private static final Color ACCENT_COLOR = new Color(137, 180, 250);
-    private static final Color TEXT_COLOR = new Color(205, 214, 244);
-    private static final Color FIELD_BG = new Color(69, 71, 90);
-    private static final Color SUCCESS_COLOR = new Color(166, 227, 161);
+    private final Color BG_COLOR = ThemeManager.getBgColor();
+    private final Color CARD_COLOR = ThemeManager.getCardColor();
+    private final Color ACCENT_COLOR = ThemeManager.getAccentColor();
+    private final Color TEXT_COLOR = ThemeManager.getTextColor();
+    private final Color FIELD_BG = ThemeManager.getFieldBgColor();
+    private final Color SUCCESS_COLOR = ThemeManager.getGreenColor();
 
     public SemesterSettingsDialog(Frame owner, Student student) {
         super(owner, "Semester Configuration", true);
@@ -99,28 +99,12 @@ public class SemesterSettingsDialog extends JDialog {
         btnPanel.setBackground(BG_COLOR);
         btnPanel.setBorder(BorderFactory.createEmptyBorder(5, 0, 15, 0));
 
-        JButton saveBtn = new JButton("💾 Save Configuration");
-        saveBtn.setFont(new Font("Segoe UI", Font.BOLD, 14));
-        saveBtn.setBackground(ACCENT_COLOR);
-        saveBtn.setForeground(BG_COLOR);
-        saveBtn.setFocusPainted(false);
-        saveBtn.setOpaque(true);
-        saveBtn.setBorderPainted(false);
-        saveBtn.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        saveBtn.setBorder(BorderFactory.createEmptyBorder(10, 25, 10, 25));
+        JButton saveBtn = new UIUtils.RoundedButton("💾 Save Configuration", ACCENT_COLOR, BG_COLOR, 12);
 
         saveBtn.addActionListener(e -> saveSemesterSettings(
                 startField, midStartField, midEndField, lastDayField));
 
-        JButton resetBtn = new JButton("🔄 Reset All");
-        resetBtn.setFont(new Font("Segoe UI", Font.BOLD, 14));
-        resetBtn.setBackground(new Color(243, 139, 168)); // Red
-        resetBtn.setForeground(BG_COLOR);
-        resetBtn.setFocusPainted(false);
-        resetBtn.setOpaque(true);
-        resetBtn.setBorderPainted(false);
-        resetBtn.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        resetBtn.setBorder(BorderFactory.createEmptyBorder(10, 25, 10, 25));
+        JButton resetBtn = new UIUtils.RoundedButton("🔄 Reset All", ThemeManager.getRedColor(), BG_COLOR, 12);
 
         resetBtn.addActionListener(e -> {
             String warningMessage = "<html><body style='width:320px;'>"
@@ -186,16 +170,12 @@ public class SemesterSettingsDialog extends JDialog {
     }
 
     private JTextField createDateField(LocalDate date) {
-        JTextField field = new JTextField(12);
+        JTextField field = new UIUtils.RoundedTextField(12, 10);
         field.setBackground(FIELD_BG);
         field.setForeground(TEXT_COLOR);
         field.setCaretColor(TEXT_COLOR);
         field.setEditable(false);
         field.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        field.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-        field.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(new Color(88, 91, 112), 1),
-                BorderFactory.createEmptyBorder(6, 8, 6, 8)));
         if (date != null) {
             field.setText(date.toString());
         }
@@ -206,14 +186,8 @@ public class SemesterSettingsDialog extends JDialog {
         JPanel p = new JPanel(new BorderLayout(5, 0));
         p.setBackground(CARD_COLOR);
 
-        JButton btn = new JButton("📅");
-        btn.setBackground(new Color(24, 24, 37)); // Match HEADER_COLOR
-        btn.setForeground(ACCENT_COLOR);
-        btn.setFocusPainted(false);
-        btn.setOpaque(true);
-        btn.setBorderPainted(false);
-        btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        btn.setBorder(BorderFactory.createEmptyBorder(0, 10, 0, 10));
+        JButton btn = new UIUtils.RoundedButton("📅", ThemeManager.getHeaderColor(), ACCENT_COLOR, 10);
+        btn.setFont(new Font("Segoe UI", Font.PLAIN, 16));
 
         btn.addActionListener(e -> {
             LocalDate current = null;
