@@ -18,33 +18,33 @@ public class ThemeManager {
     private static boolean darkMode = true;
     private static final List<ThemeChangeListener> listeners = new ArrayList<>();
 
-    // ═══ Dark Theme (Catppuccin Mocha) ═══
-    private static final Color DARK_BG = new Color(30, 30, 46);
-    private static final Color DARK_CARD = new Color(49, 50, 68);
-    private static final Color DARK_HEADER = new Color(24, 24, 37);
-    private static final Color DARK_ACCENT = new Color(137, 180, 250);
-    private static final Color DARK_TEXT = new Color(205, 214, 244);
-    private static final Color DARK_SUBTEXT = new Color(147, 153, 178);
-    private static final Color DARK_SURFACE = new Color(69, 71, 90);
-    private static final Color DARK_FIELD_BG = new Color(69, 71, 90);
-    private static final Color DARK_GREEN = new Color(166, 227, 161);
-    private static final Color DARK_RED = new Color(243, 139, 168);
-    private static final Color DARK_YELLOW = new Color(249, 226, 175);
-    private static final Color DARK_BORDER = new Color(88, 91, 112);
+    // ═══ Dark Theme (Midnight Academia) ═══
+    private static final Color DARK_BG = new Color(11, 19, 43);
+    private static final Color DARK_CARD = new Color(28, 37, 65);
+    private static final Color DARK_HEADER = new Color(10, 17, 40);
+    private static final Color DARK_ACCENT = new Color(245, 166, 35);
+    private static final Color DARK_TEXT = new Color(234, 234, 234);
+    private static final Color DARK_SUBTEXT = new Color(160, 170, 178);
+    private static final Color DARK_SURFACE = new Color(58, 80, 107);
+    private static final Color DARK_FIELD_BG = new Color(28, 37, 65);
+    private static final Color DARK_GREEN = new Color(46, 139, 87);
+    private static final Color DARK_RED = new Color(211, 47, 47);
+    private static final Color DARK_YELLOW = new Color(249, 168, 37);
+    private static final Color DARK_BORDER = new Color(58, 80, 107);
 
-    // ═══ Light Theme (Catppuccin Latte) ═══
-    private static final Color LIGHT_BG = new Color(239, 241, 245);
+    // ═══ Light Theme (Classic Ivory & Navy) ═══
+    private static final Color LIGHT_BG = new Color(248, 249, 250);
     private static final Color LIGHT_CARD = new Color(255, 255, 255);
-    private static final Color LIGHT_HEADER = new Color(220, 224, 232);
-    private static final Color LIGHT_ACCENT = new Color(30, 102, 245);
-    private static final Color LIGHT_TEXT = new Color(76, 79, 105);
-    private static final Color LIGHT_SUBTEXT = new Color(108, 111, 133);
-    private static final Color LIGHT_SURFACE = new Color(204, 208, 218);
-    private static final Color LIGHT_FIELD_BG = new Color(230, 233, 239);
-    private static final Color LIGHT_GREEN = new Color(64, 160, 43);
-    private static final Color LIGHT_RED = new Color(210, 15, 57);
-    private static final Color LIGHT_YELLOW = new Color(223, 142, 29);
-    private static final Color LIGHT_BORDER = new Color(172, 176, 190);
+    private static final Color LIGHT_HEADER = new Color(241, 243, 245);
+    private static final Color LIGHT_ACCENT = new Color(30, 58, 138);
+    private static final Color LIGHT_TEXT = new Color(26, 28, 32);
+    private static final Color LIGHT_SUBTEXT = new Color(90, 98, 104);
+    private static final Color LIGHT_SURFACE = new Color(233, 236, 239);
+    private static final Color LIGHT_FIELD_BG = new Color(248, 249, 250);
+    private static final Color LIGHT_GREEN = new Color(46, 139, 87);
+    private static final Color LIGHT_RED = new Color(211, 47, 47);
+    private static final Color LIGHT_YELLOW = new Color(217, 119, 6);
+    private static final Color LIGHT_BORDER = new Color(206, 212, 218);
 
     // ═══ Getters ═══
     public static Color getBgColor() {

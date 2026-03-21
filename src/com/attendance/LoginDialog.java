@@ -15,14 +15,14 @@ public class LoginDialog extends JDialog {
     private Student authenticatedStudent;
     private boolean loginSuccessful = false;
 
-    // UI Colors
-    private static final Color BG_COLOR = new Color(30, 30, 46);
-    private static final Color CARD_COLOR = new Color(49, 50, 68);
-    private static final Color ACCENT_COLOR = new Color(137, 180, 250);
-    private static final Color TEXT_COLOR = new Color(205, 214, 244);
-    private static final Color ERROR_COLOR = new Color(243, 139, 168);
-    private static final Color SUCCESS_COLOR = new Color(166, 227, 161);
-    private static final Color FIELD_BG = new Color(69, 71, 90);
+    // UI Colors mapped to ThemeManager (default is dark before login)
+    private static final Color BG_COLOR = ThemeManager.getBgColor();
+    private static final Color CARD_COLOR = ThemeManager.getCardColor();
+    private static final Color ACCENT_COLOR = ThemeManager.getAccentColor();
+    private static final Color TEXT_COLOR = ThemeManager.getTextColor();
+    private static final Color ERROR_COLOR = ThemeManager.getRedColor();
+    private static final Color SUCCESS_COLOR = ThemeManager.getGreenColor();
+    private static final Color FIELD_BG = ThemeManager.getFieldBgColor();
 
     public LoginDialog(Frame owner) {
         super(owner, "Attendance Manager — Login", true);
@@ -322,40 +322,23 @@ public class LoginDialog extends JDialog {
     }
 
     private JTextField createTextField() {
-        JTextField f = new JTextField(20);
+        UIUtils.RoundedTextField f = new UIUtils.RoundedTextField(20, 12);
         f.setBackground(FIELD_BG);
         f.setForeground(TEXT_COLOR);
         f.setCaretColor(TEXT_COLOR);
-        f.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-        f.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(new Color(88, 91, 112), 1),
-                BorderFactory.createEmptyBorder(6, 8, 6, 8)));
         return f;
     }
 
     private JPasswordField createPasswordField() {
-        JPasswordField f = new JPasswordField(20);
+        UIUtils.RoundedPasswordField f = new UIUtils.RoundedPasswordField(20, 12);
         f.setBackground(FIELD_BG);
         f.setForeground(TEXT_COLOR);
         f.setCaretColor(TEXT_COLOR);
-        f.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-        f.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(new Color(88, 91, 112), 1),
-                BorderFactory.createEmptyBorder(6, 8, 6, 8)));
         return f;
     }
 
     private JButton createButton(String text, Color bgColor) {
-        JButton btn = new JButton(text);
-        btn.setFont(new Font("Segoe UI", Font.BOLD, 14));
-        btn.setBackground(bgColor);
-        btn.setForeground(BG_COLOR);
-        btn.setFocusPainted(false);
-        btn.setOpaque(true);
-        btn.setBorderPainted(false);
-        btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        btn.setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20));
-        return btn;
+        return new UIUtils.RoundedButton(text, bgColor, BG_COLOR, 12);
     }
 
     // ── Public Accessors ──
