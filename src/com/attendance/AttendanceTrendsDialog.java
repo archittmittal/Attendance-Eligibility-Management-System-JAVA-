@@ -9,21 +9,18 @@ import java.util.List;
 import javax.swing.*;
 
 /**
- * Attendance Trends Dialog — Displays weekly attendance trend line chart.
- * Custom-painted using Graphics2D (no external library needed).
- *
+ * Attendance Trends Dialog — Displays weekly attendance trend line chart with premium UI.
  * Features:
- * - One line per subject (different Catppuccin colors)
- * - Dashed 75% threshold line
- * - X-axis: weeks, Y-axis: attendance % (0–100)
- * - Mouse hover shows exact values via tooltip
- * - Overall combined trend line
+ * - Interactive legend for subject highlighting
+ * - Rounded bars with vertical gradients
+ * - Subject initials for easy identification
+ * - Glow effect on 75% threshold and overall trend lines
+ * - Premium dark/light theme support
  */
 public class AttendanceTrendsDialog extends JDialog {
 
     // Colors (resolved via ThemeManager for dark/light support)
     private static final Color BG_COLOR = ThemeManager.getBgColor();
-    private static final Color CARD_COLOR = ThemeManager.getCardColor();
     private static final Color HEADER_COLOR = ThemeManager.getHeaderColor();
     private static final Color ACCENT_COLOR = ThemeManager.getAccentColor();
     private static final Color TEXT_COLOR = ThemeManager.getTextColor();
@@ -45,102 +42,134 @@ public class AttendanceTrendsDialog extends JDialog {
             new Color(180, 190, 254), // Lavender
     };
 
+    private Subject highlightedSubject = null;
+    private final ChartPanel chartPanel;
+
     public AttendanceTrendsDialog(Frame owner, Student student) {
         super(owner, "📊 Attendance Trends", true);
-        setSize(850, 550);
+        setSize(950, 650);
         setLocationRelativeTo(owner);
 
         JPanel mainPanel = new JPanel(new BorderLayout());
         mainPanel.setBackground(BG_COLOR);
 
         // ── Header ──
-        JPanel headerPanel = new JPanel();
+        JPanel headerPanel = new JPanel(new BorderLayout());
         headerPanel.setBackground(BG_COLOR);
-        headerPanel.setBorder(BorderFactory.createEmptyBorder(15, 0, 5, 0));
-        JLabel titleLabel = new JLabel("📊 Attendance Trends — Weekly Breakdown");
-        titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 20));
-        titleLabel.setForeground(ACCENT_COLOR);
-        headerPanel.add(titleLabel);
+        headerPanel.setBorder(BorderFactory.createEmptyBorder(25, 30, 15, 30));
+
+        JLabel titleLabel = new JLabel("Attendance Analytics");
+        titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 28));
+        titleLabel.setForeground(TEXT_COLOR);
+
+        JLabel subTitleLabel = new JLabel("Weekly breakdown and trend analysis of your subjects");
+        subTitleLabel.setFont(new Font("Segoe UI", Font.PLAIN, 15));
+        subTitleLabel.setForeground(SUBTEXT_COLOR);
+
+        JPanel titleGroup = new JPanel(new GridLayout(2, 1, 0, 5));
+        titleGroup.setBackground(BG_COLOR);
+        titleGroup.add(titleLabel);
+        titleGroup.add(subTitleLabel);
+        headerPanel.add(titleGroup, BorderLayout.WEST);
+
         mainPanel.add(headerPanel, BorderLayout.NORTH);
 
-        // ── Chart Panel ──
+        // ── Data Computation ──
         List<Subject> subjects = student.getSubjects();
         Map<Subject, List<double[]>> weeklyData = computeWeeklyData(subjects);
 
-        // Calculate max week for sizing
-        int maxWeek = 1;
+        // Calculate max week
+        int maxWeekNum = 1;
         for (List<double[]> points : weeklyData.values()) {
             for (double[] p : points) {
-                maxWeek = Math.max(maxWeek, (int) p[0]);
+                maxWeekNum = Math.max(maxWeekNum, (int) p[0]);
             }
         }
-        maxWeek = Math.max(maxWeek, 1);
+        maxWeekNum = Math.max(maxWeekNum, 1);
 
-        // Calculate preferred width: enough space for all bars
-        int subjectCount = subjects.size();
-        int barWidth = Math.max(16, 32 - subjectCount); // wider bars for fewer subjects
-        int minBarSpacing = 6;
-        int chartWidth = (maxWeek + 1) * subjectCount * (barWidth + minBarSpacing) + 120;
-        int chartHeight = 400;
-
-        ChartPanel chartPanel = new ChartPanel(subjects, weeklyData);
-        chartPanel.setPreferredSize(new Dimension(chartWidth, chartHeight));
+        // ── Chart Panel ──
+        chartPanel = new ChartPanel(subjects, weeklyData);
+        int minWidth = 850;
+        int calculatedWidth = (maxWeekNum + 1) * subjects.size() * 35 + 200;
+        chartPanel.setPreferredSize(new Dimension(Math.max(minWidth, calculatedWidth), 450));
 
         JScrollPane scrollPane = new JScrollPane(chartPanel,
                 JScrollPane.VERTICAL_SCROLLBAR_NEVER,
                 JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
-        scrollPane.setBorder(null);
-        scrollPane.getViewport().setBackground(CARD_COLOR);
+        scrollPane.setBorder(BorderFactory.createEmptyBorder(0, 15, 0, 15));
+        scrollPane.getViewport().setBackground(BG_COLOR);
+        scrollPane.getHorizontalScrollBar().setUnitIncrement(24);
         mainPanel.add(scrollPane, BorderLayout.CENTER);
 
         // ── Legend ──
-        JPanel legendPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 15, 5));
-        legendPanel.setBackground(BG_COLOR);
-        legendPanel.setBorder(BorderFactory.createEmptyBorder(5, 10, 12, 10));
+        JPanel legendWrapper = new JPanel(new FlowLayout(FlowLayout.CENTER, 20, 15));
+        legendWrapper.setBackground(BG_COLOR);
+        legendWrapper.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createMatteBorder(1, 0, 0, 0, SURFACE),
+                BorderFactory.createEmptyBorder(10, 20, 15, 20)));
 
-        // Overall line
-        JLabel overallDot = new JLabel("━ Overall");
-        overallDot.setForeground(TEXT_COLOR);
-        overallDot.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        legendPanel.add(overallDot);
+        legendWrapper.add(createLegendItem("Overall Trend", TEXT_COLOR, null, false));
 
         for (int i = 0; i < subjects.size(); i++) {
-            JLabel dot = new JLabel("━ " + subjects.get(i).getName());
-            dot.setForeground(LINE_COLORS[i % LINE_COLORS.length]);
-            dot.setFont(new Font("Segoe UI", Font.BOLD, 12));
-            legendPanel.add(dot);
+            Subject s = subjects.get(i);
+            Color color = LINE_COLORS[i % LINE_COLORS.length];
+            legendWrapper.add(createLegendItem(s.getName(), color, s, true));
         }
 
-        // Threshold legend
-        JLabel threshDot = new JLabel("┈ 75% Threshold");
-        threshDot.setForeground(RED);
-        threshDot.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        legendPanel.add(threshDot);
+        legendWrapper.add(createLegendItem("75% Goal", RED, null, false));
 
-        mainPanel.add(legendPanel, BorderLayout.SOUTH);
+        mainPanel.add(legendWrapper, BorderLayout.SOUTH);
 
         setContentPane(mainPanel);
     }
 
-    /**
-     * Compute weekly attendance percentages for each subject.
-     * Returns Map: Subject -> List of [weekNumber, cumulativePercentage].
-     */
+    private JPanel createLegendItem(String name, Color color, Subject subject, boolean interactive) {
+        JPanel item = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
+        item.setBackground(BG_COLOR);
+        if (interactive) item.setCursor(new Cursor(Cursor.HAND_CURSOR));
+
+        JLabel icon = new JLabel(interactive ? "●" : "━");
+        icon.setFont(new Font("Segoe UI", Font.BOLD, interactive ? 20 : 18));
+        icon.setForeground(color);
+
+        JLabel label = new JLabel(name);
+        label.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        label.setForeground(TEXT_COLOR);
+
+        item.add(icon);
+        item.add(label);
+
+        if (interactive && subject != null) {
+            item.addMouseListener(new java.awt.event.MouseAdapter() {
+                @Override
+                public void mouseEntered(java.awt.event.MouseEvent e) {
+                    highlightedSubject = subject;
+                    label.setForeground(ACCENT_COLOR);
+                    chartPanel.repaint();
+                }
+
+                @Override
+                public void mouseExited(java.awt.event.MouseEvent e) {
+                    highlightedSubject = null;
+                    label.setForeground(TEXT_COLOR);
+                    chartPanel.repaint();
+                }
+            });
+        }
+
+        return item;
+    }
+
     private static Map<Subject, List<double[]>> computeWeeklyData(List<Subject> subjects) {
         Map<Subject, List<double[]>> result = new LinkedHashMap<>();
-
         for (Subject subject : subjects) {
             List<AttendanceRecord> records = subject.getAttendanceHistory();
             if (records.isEmpty()) {
                 result.put(subject, new ArrayList<>());
                 continue;
             }
-
-            // Sort by date
             List<AttendanceRecord> sorted = new ArrayList<>(records);
             sorted.sort(Comparator.comparing(r -> r.getDate() != null ? r.getDate() : LocalDate.MIN));
-
-            // Remove records with null dates
             sorted.removeIf(r -> r.getDate() == null);
             if (sorted.isEmpty()) {
                 result.put(subject, new ArrayList<>());
@@ -149,70 +178,42 @@ public class AttendanceTrendsDialog extends JDialog {
 
             LocalDate firstDate = sorted.get(0).getDate();
             List<double[]> weekPoints = new ArrayList<>();
-
-            int cumAttended = 0;
-            int cumConducted = 0;
-            int currentWeek = 0;
+            int cumAttended = 0, cumConducted = 0, currentWeek = 0;
 
             for (AttendanceRecord record : sorted) {
                 int weekNum = (int) ChronoUnit.WEEKS.between(firstDate, record.getDate());
                 cumConducted++;
-                if (record.isPresent())
-                    cumAttended++;
+                if (record.isPresent()) cumAttended++;
 
-                // If we've moved to a new week or this is the last record, log the point
                 if (weekNum > currentWeek || record == sorted.get(sorted.size() - 1)) {
-                    double pct = (cumConducted == 0) ? 100.0 : (double) cumAttended / cumConducted * 100.0;
+                    double pct = (double) cumAttended / cumConducted * 100.0;
                     weekPoints.add(new double[] { weekNum, pct });
                     currentWeek = weekNum;
                 }
             }
-
-            // Ensure we have at least final cumulative point
-            if (weekPoints.isEmpty()) {
-                double pct = (cumConducted == 0) ? 100.0 : (double) cumAttended / cumConducted * 100.0;
-                weekPoints.add(new double[] { 0, pct });
-            }
-
             result.put(subject, weekPoints);
         }
-
         return result;
     }
 
-    /**
-     * Custom chart panel that draws the line chart.
-     */
-    private static class ChartPanel extends JPanel {
+    private class ChartPanel extends JPanel {
         private final List<Subject> subjects;
         private final Map<Subject, List<double[]>> weeklyData;
-
-        // Chart area bounds (computed in paint)
-        private int chartLeft, chartTop, chartRight, chartBottom;
-        private int maxWeek;
-
-        // Tooltip
+        private int chartLeft, chartTop, chartRight, chartBottom, maxWeek;
         private String tooltipText = null;
         private int tooltipX = -1, tooltipY = -1;
 
         ChartPanel(List<Subject> subjects, Map<Subject, List<double[]>> weeklyData) {
             this.subjects = subjects;
             this.weeklyData = weeklyData;
-            setBackground(CARD_COLOR);
-            setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20));
-
+            setBackground(BG_COLOR);
             addMouseMotionListener(new java.awt.event.MouseAdapter() {
                 @Override
-                public void mouseMoved(java.awt.event.MouseEvent e) {
-                    updateTooltip(e.getX(), e.getY());
-                }
+                public void mouseMoved(java.awt.event.MouseEvent e) { updateTooltip(e.getX(), e.getY()); }
             });
             addMouseListener(new java.awt.event.MouseAdapter() {
                 @Override
-                public void mouseExited(java.awt.event.MouseEvent e) {
-                    tooltipText = null;
-                    repaint();
-                }
+                public void mouseExited(java.awt.event.MouseEvent e) { tooltipText = null; repaint(); }
             });
         }
 
@@ -223,218 +224,174 @@ public class AttendanceTrendsDialog extends JDialog {
             g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
             g2.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_LCD_HRGB);
 
-            // Chart area
-            chartLeft = 55;
-            chartTop = 15;
-            chartRight = getWidth() - 25;
-            chartBottom = getHeight() - 35;
+            chartLeft = 70; chartTop = 40;
+            chartRight = getWidth() - 40;
+            chartBottom = getHeight() - 60;
             int chartWidth = chartRight - chartLeft;
             int chartHeight = chartBottom - chartTop;
 
-            // Find max week across all subjects
             maxWeek = 1;
-            for (List<double[]> points : weeklyData.values()) {
-                for (double[] p : points) {
-                    maxWeek = Math.max(maxWeek, (int) p[0]);
-                }
-            }
+            for (List<double[]> pts : weeklyData.values()) for (double[] p : pts) maxWeek = Math.max(maxWeek, (int) p[0]);
             maxWeek = Math.max(maxWeek, 1);
 
-            // ── Grid Lines ──
-            g2.setColor(SURFACE);
+            // ── Grid ──
             g2.setStroke(new BasicStroke(1f));
-            // Horizontal lines at 0%, 25%, 50%, 75%, 100%
             for (int pct = 0; pct <= 100; pct += 25) {
                 int y = chartBottom - (int) (pct / 100.0 * chartHeight);
-                g2.setColor(SURFACE);
+                g2.setColor(new Color(SURFACE.getRed(), SURFACE.getGreen(), SURFACE.getBlue(), 50));
                 g2.drawLine(chartLeft, y, chartRight, y);
-                // Label
                 g2.setColor(SUBTEXT_COLOR);
-                g2.setFont(new Font("Segoe UI", Font.PLAIN, 10));
-                g2.drawString(pct + "%", chartLeft - 35, y + 4);
+                g2.setFont(new Font("Segoe UI", Font.BOLD, 12));
+                g2.drawString(pct + "%", chartLeft - 45, y + 5);
             }
 
-            // X-axis labels (week numbers)
-            g2.setFont(new Font("Segoe UI", Font.BOLD, 11));
-            g2.setColor(ACCENT_COLOR);
-            int step = Math.max(1, maxWeek / 10);
-            for (int w = 0; w <= maxWeek; w += step) {
-                int x = chartLeft + (int) ((double) w / maxWeek * chartWidth);
-                g2.drawString("Week " + (w + 1), x - 16, chartBottom + 22);
-            }
-
-            // ── 75% Threshold Line ──
-            int threshY = chartBottom - (int) (75.0 / 100.0 * chartHeight);
+            // ── Threshold ──
+            int threshY = chartBottom - (int) (0.75 * chartHeight);
+            g2.setColor(new Color(RED.getRed(), RED.getGreen(), RED.getBlue(), 40));
+            g2.setStroke(new BasicStroke(5f));
+            g2.drawLine(chartLeft, threshY, chartRight, threshY);
             g2.setColor(RED);
-            g2.setStroke(new BasicStroke(1.5f, BasicStroke.CAP_BUTT, BasicStroke.JOIN_MITER,
-                    10.0f, new float[] { 6.0f, 4.0f }, 0.0f));
+            g2.setStroke(new BasicStroke(2f, BasicStroke.CAP_BUTT, BasicStroke.JOIN_MITER, 10f, new float[]{10f, 6f}, 0f));
             g2.drawLine(chartLeft, threshY, chartRight, threshY);
 
-            // ── Subject Bars ──
-            int subjectCount = subjects.size();
-            int barWidth = Math.max(8, chartWidth / (maxWeek * subjectCount + subjectCount));
+            // ── Bars ──
+            int wGroupW = chartWidth / (maxWeek + 1);
+            int barWidth = Math.max(6, (wGroupW - 20) / subjects.size());
             int colorIdx = 0;
-            for (Subject subject : subjects) {
-                List<double[]> points = weeklyData.get(subject);
-                if (points == null || points.isEmpty()) {
-                    colorIdx++;
-                    continue;
-                }
-                Color barColor = LINE_COLORS[colorIdx % LINE_COLORS.length];
+            for (Subject s : subjects) {
+                List<double[]> points = weeklyData.get(s);
+                if (points == null || points.isEmpty()) { colorIdx++; continue; }
+
+                boolean isDimmed = highlightedSubject != null && highlightedSubject != s;
+                float alpha = isDimmed ? 0.15f : 1.0f;
+                Color baseColor = LINE_COLORS[colorIdx % LINE_COLORS.length];
+                Color barColor = new Color(baseColor.getRed(), baseColor.getGreen(), baseColor.getBlue(), (int)(alpha * 255));
+
                 for (double[] p : points) {
-                    int week = (int) p[0];
-                    double pct = p[1];
-                    int x = chartLeft + week * (barWidth * subjectCount + 4) + colorIdx * barWidth;
-                    int y = chartBottom - (int) (pct / 100.0 * chartHeight);
-                    int height = chartBottom - y;
-                    // Color code: green if >=75, yellow if 60-75, red if <60
-                    Color statusColor = pct >= 75 ? GREEN : (pct >= 60 ? YELLOW : RED);
+                    int x = chartLeft + (int)p[0] * wGroupW + (wGroupW - subjects.size() * barWidth) / 2 + colorIdx * barWidth;
+                    int y = chartBottom - (int) (p[1] / 100.0 * chartHeight);
+                    int h = chartBottom - y;
+
+                    GradientPaint gp = new GradientPaint(x, y, barColor, x, chartBottom, new Color(barColor.getRed(), barColor.getGreen(), barColor.getBlue(), (int)(alpha * 30)));
+                    g2.setPaint(gp);
+                    g2.fillRoundRect(x + 1, y, barWidth - 2, h, 8, 8);
                     g2.setColor(barColor);
-                    g2.fillRect(x, y, barWidth, height);
-                    g2.setColor(statusColor);
-                    g2.drawRect(x, y, barWidth, height);
-                    // Value label
-                    g2.setFont(new Font("Segoe UI", Font.BOLD, 11));
-                    g2.setColor(barColor);
-                    g2.drawString(String.format("%.1f%%", pct), x + 2, y - 6);
+                    g2.setStroke(new BasicStroke(1.5f));
+                    g2.drawRoundRect(x + 1, y, barWidth - 2, h, 8, 8);
+
+                    if (barWidth > 20 && !isDimmed) {
+                        g2.setFont(new Font("Segoe UI", Font.BOLD, 10));
+                        String initial = s.getName().substring(0, Math.min(2, s.getName().length())).toUpperCase();
+                        g2.setColor(new Color(255, 255, 255, 160));
+                        g2.drawString(initial, x + (barWidth - g2.getFontMetrics().stringWidth(initial)) / 2, y - 8);
+                    }
                 }
                 colorIdx++;
             }
 
-            // ── Overall Combined Line ──
-            List<double[]> overallPoints = computeOverallTrend();
-            if (overallPoints.size() >= 2) {
-                g2.setColor(TEXT_COLOR);
-                g2.setStroke(new BasicStroke(3.0f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
-                Path2D.Double overallPath = new Path2D.Double();
+            // ── Overall Line ──
+            List<double[]> overall = computeOverallTrend();
+            if (overall.size() >= 2 && highlightedSubject == null) {
+                g2.setColor(new Color(TEXT_COLOR.getRed(), TEXT_COLOR.getGreen(), TEXT_COLOR.getBlue(), 100));
+                g2.setStroke(new BasicStroke(6f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+                Path2D.Double path = new Path2D.Double();
                 boolean first = true;
-                for (double[] p : overallPoints) {
-                    int x = chartLeft + (int) (p[0] / maxWeek * chartWidth);
+                for (double[] p : overall) {
+                    int x = chartLeft + (int)p[0] * wGroupW + wGroupW / 2;
                     int y = chartBottom - (int) (p[1] / 100.0 * chartHeight);
-                    if (first) {
-                        overallPath.moveTo(x, y);
-                        first = false;
-                    } else {
-                        overallPath.lineTo(x, y);
-                    }
+                    if (first) { path.moveTo(x, y); first = false; } else path.lineTo(x, y);
                 }
-                g2.draw(overallPath);
-            }
-
-            // ── Axes ──
-            g2.setColor(ACCENT_COLOR);
-            g2.setStroke(new BasicStroke(2f));
-            g2.drawLine(chartLeft, chartTop, chartLeft, chartBottom);
-            g2.drawLine(chartLeft, chartBottom, chartRight, chartBottom);
-            // Axis labels
-            g2.setFont(new Font("Segoe UI", Font.BOLD, 13));
-            g2.setColor(HEADER_COLOR);
-            g2.drawString("Weeks", (chartLeft + chartRight) / 2 - 30, chartBottom + 40);
-            g2.rotate(-Math.PI / 2);
-            g2.drawString("Attendance %", -((chartTop + chartBottom) / 2 + 40), chartLeft - 50);
-            g2.rotate(Math.PI / 2);
-
-            // ── Tooltip ──
-            if (tooltipText != null) {
-                g2.setFont(new Font("Segoe UI", Font.PLAIN, 11));
-                FontMetrics fm = g2.getFontMetrics();
-                int tw = fm.stringWidth(tooltipText) + 12;
-                int th = fm.getHeight() + 8;
-                int tx = Math.min(tooltipX + 15, getWidth() - tw - 5);
-                int ty = Math.max(tooltipY - th - 5, 5);
-
-                g2.setColor(HEADER_COLOR);
-                g2.fillRoundRect(tx, ty, tw, th, 6, 6);
-                g2.setColor(ACCENT_COLOR);
-                g2.drawRoundRect(tx, ty, tw, th, 6, 6);
+                g2.draw(path);
                 g2.setColor(TEXT_COLOR);
-                g2.drawString(tooltipText, tx + 6, ty + th - 6);
+                g2.setStroke(new BasicStroke(2.5f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+                g2.draw(path);
             }
 
+            // ── X-Axis Labels ──
+            g2.setFont(new Font("Segoe UI", Font.BOLD, 13));
+            g2.setColor(SUBTEXT_COLOR);
+            for (int w = 0; w <= maxWeek; w++) {
+                int x = chartLeft + w * wGroupW + wGroupW / 2;
+                g2.drawString("Week " + (w + 1), x - 25, chartBottom + 30);
+            }
+
+            if (tooltipText != null) renderTooltip(g2);
             g2.dispose();
         }
 
-        /**
-         * Compute an overall combined attendance trend.
-         */
-        private List<double[]> computeOverallTrend() {
-            // Find the global earliest date across all subjects first
-            LocalDate refDate = null;
-            for (Subject subject : subjects) {
-                for (AttendanceRecord record : subject.getAttendanceHistory()) {
-                    if (record.getDate() != null) {
-                        if (refDate == null || record.getDate().isBefore(refDate)) {
-                            refDate = record.getDate();
-                        }
-                    }
-                }
-            }
+        private void renderTooltip(Graphics2D g2) {
+            g2.setFont(new Font("Segoe UI", Font.BOLD, 13));
+            FontMetrics fm = g2.getFontMetrics();
+            String[] lines = tooltipText.split("\n");
+            int tw = 0; for (String l : lines) tw = Math.max(tw, fm.stringWidth(l));
+            tw += 24; int th = (fm.getHeight() + 6) * lines.length + 15;
+            int tx = Math.min(tooltipX + 15, getWidth() - tw - 15);
+            int ty = Math.max(tooltipY - th - 15, 15);
 
-            if (refDate == null) {
-                return new ArrayList<>();
-            }
+            g2.setColor(new Color(0, 0, 0, 100));
+            g2.fillRoundRect(tx + 4, ty + 4, tw, th, 15, 15);
+            g2.setColor(HEADER_COLOR);
+            g2.fillRoundRect(tx, ty, tw, th, 15, 15);
+            g2.setColor(ACCENT_COLOR);
+            g2.setStroke(new BasicStroke(2f));
+            g2.drawRoundRect(tx, ty, tw, th, 15, 15);
 
-            // Merge all records, group by week relative to global refDate
-            TreeMap<Integer, int[]> weekMap = new TreeMap<>(); // week -> [attended, conducted]
-
-            for (Subject subject : subjects) {
-                List<AttendanceRecord> records = subject.getAttendanceHistory();
-                for (AttendanceRecord record : records) {
-                    if (record.getDate() == null)
-                        continue;
-                    int week = (int) ChronoUnit.WEEKS.between(refDate, record.getDate());
-                    weekMap.computeIfAbsent(week, k -> new int[] { 0, 0 });
-                    weekMap.get(week)[1]++;
-                    if (record.isPresent())
-                        weekMap.get(week)[0]++;
-                }
-            }
-
-            // Convert to cumulative percentages
-            List<double[]> result = new ArrayList<>();
-            int cumAtt = 0, cumCond = 0;
-            for (Map.Entry<Integer, int[]> entry : weekMap.entrySet()) {
-                cumAtt += entry.getValue()[0];
-                cumCond += entry.getValue()[1];
-                double pct = (cumCond == 0) ? 100.0 : (double) cumAtt / cumCond * 100.0;
-                result.add(new double[] { entry.getKey(), pct });
-            }
-            return result;
+            g2.setColor(TEXT_COLOR);
+            int currY = ty + fm.getAscent() + 10;
+            for (String l : lines) { g2.drawString(l, tx + 12, currY); currY += fm.getHeight() + 6; }
         }
 
         private void updateTooltip(int mx, int my) {
             int chartWidth = chartRight - chartLeft;
             int chartHeight = chartBottom - chartTop;
-            if (chartWidth <= 0 || chartHeight <= 0)
-                return;
-
-            // Find closest data point
-            double minDist = 20; // pixel threshold
-            String best = null;
+            String best = null; double minDist = 40;
+            int wGroupW = chartWidth / (maxWeek + 1);
+            int barWidth = Math.max(6, (wGroupW - 20) / subjects.size());
 
             int colorIdx = 0;
-            for (Subject subject : subjects) {
-                List<double[]> points = weeklyData.get(subject);
-                if (points == null) {
-                    colorIdx++;
-                    continue;
-                }
+            for (Subject s : subjects) {
+                List<double[]> points = weeklyData.get(s);
+                if (points == null) { colorIdx++; continue; }
                 for (double[] p : points) {
-                    int x = chartLeft + (int) (p[0] / maxWeek * chartWidth);
+                    int x = chartLeft + (int)p[0] * wGroupW + (wGroupW - subjects.size() * barWidth) / 2 + colorIdx * barWidth + barWidth / 2;
                     int y = chartBottom - (int) (p[1] / 100.0 * chartHeight);
-                    double dist = Math.sqrt((mx - x) * (mx - x) + (my - y) * (my - y));
-                    if (dist < minDist) {
-                        minDist = dist;
-                        best = String.format("%s — W%d: %.1f%%", subject.getName(), (int) p[0] + 1, p[1]);
+                    double d = Math.sqrt(Math.pow(mx - x, 2) + Math.pow(my - y, 2));
+                    if (d < minDist) {
+                        minDist = d;
+                        String status = p[1] >= 75 ? "ELIGIBLE ✓" : "LOW ATTENDANCE ⚠";
+                        best = String.format("%s\nWeek %d\n%.1f%% - %s", s.getName(), (int)p[0] + 1, p[1], status);
                     }
                 }
                 colorIdx++;
             }
+            tooltipText = best; tooltipX = mx; tooltipY = my; repaint();
+        }
 
-            tooltipText = best;
-            tooltipX = mx;
-            tooltipY = my;
-            repaint();
+        private List<double[]> computeOverallTrend() {
+            LocalDate refDate = null;
+            for (Subject s : subjects) {
+                for (AttendanceRecord r : s.getAttendanceHistory()) {
+                    if (r.getDate() != null && (refDate == null || r.getDate().isBefore(refDate))) refDate = r.getDate();
+                }
+            }
+            if (refDate == null) return new ArrayList<>();
+            TreeMap<Integer, int[]> weekMap = new TreeMap<>();
+            for (Subject s : subjects) {
+                for (AttendanceRecord r : s.getAttendanceHistory()) {
+                    if (r.getDate() == null) continue;
+                    int week = (int) ChronoUnit.WEEKS.between(refDate, r.getDate());
+                    weekMap.computeIfAbsent(week, k -> new int[]{0, 0});
+                    weekMap.get(week)[1]++;
+                    if (r.isPresent()) weekMap.get(week)[0]++;
+                }
+            }
+            List<double[]> res = new ArrayList<>();
+            int cA = 0, cC = 0;
+            for (Map.Entry<Integer, int[]> e : weekMap.entrySet()) {
+                cA += e.getValue()[0]; cC += e.getValue()[1];
+                res.add(new double[]{e.getKey(), (double) cA / cC * 100.0});
+            }
+            return res;
         }
     }
 }
