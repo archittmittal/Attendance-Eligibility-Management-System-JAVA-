@@ -21,11 +21,11 @@ public class PredictionDialog extends JDialog {
     private WeeklySchedule schedule;
 
     // Colors
-    private static final Color BG_COLOR = new Color(30, 30, 46);
-    private static final Color CARD_COLOR = new Color(49, 50, 68);
-    private static final Color ACCENT_COLOR = new Color(137, 180, 250);
-    private static final Color TEXT_COLOR = new Color(205, 214, 244);
-    private static final Color FIELD_BG = new Color(69, 71, 90);
+    private final Color BG_COLOR = ThemeManager.getBgColor();
+    private final Color CARD_COLOR = ThemeManager.getCardColor();
+    private final Color ACCENT_COLOR = ThemeManager.getAccentColor();
+    private final Color TEXT_COLOR = ThemeManager.getTextColor();
+    private final Color FIELD_BG = ThemeManager.getFieldBgColor();
 
     public PredictionDialog(Frame owner, Student student, WeeklySchedule schedule) {
         super(owner, "🏖️ Leave Planner — Full Impact Analysis", true);
@@ -76,15 +76,7 @@ public class PredictionDialog extends JDialog {
         gbc.gridx = 1;
         inputPanel.add(createDatePickerPanel(endDateField), gbc);
 
-        JButton predictBtn = new JButton("Analyze Leave Impact");
-        predictBtn.setFont(new Font("Segoe UI", Font.BOLD, 13));
-        predictBtn.setBackground(ACCENT_COLOR);
-        predictBtn.setForeground(BG_COLOR);
-        predictBtn.setFocusPainted(false);
-        predictBtn.setOpaque(true);
-        predictBtn.setBorderPainted(false);
-        predictBtn.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        predictBtn.setBorder(BorderFactory.createEmptyBorder(8, 20, 8, 20));
+        JButton predictBtn = new UIUtils.RoundedButton("Analyze Leave Impact", ACCENT_COLOR, BG_COLOR, 12);
 
         gbc.gridy = 3;
         gbc.gridx = 0;
@@ -114,17 +106,13 @@ public class PredictionDialog extends JDialog {
     }
 
     private JTextField createDateField(String defaultValue) {
-        JTextField field = new JTextField(12);
+        JTextField field = new UIUtils.RoundedTextField(12, 10);
         field.setText(defaultValue);
         field.setBackground(FIELD_BG);
         field.setForeground(TEXT_COLOR);
         field.setEditable(false);
         field.setCursor(new Cursor(Cursor.HAND_CURSOR));
         field.setCaretColor(TEXT_COLOR);
-        field.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        field.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(new Color(88, 91, 112)),
-                BorderFactory.createEmptyBorder(6, 8, 6, 8)));
         return field;
     }
 
@@ -132,14 +120,8 @@ public class PredictionDialog extends JDialog {
         JPanel p = new JPanel(new BorderLayout(5, 0));
         p.setBackground(CARD_COLOR);
 
-        JButton btn = new JButton("📅");
-        btn.setBackground(new Color(24, 24, 37)); // Match HEADER_COLOR
-        btn.setForeground(ACCENT_COLOR);
-        btn.setFocusPainted(false);
-        btn.setOpaque(true);
-        btn.setBorderPainted(false);
-        btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        btn.setBorder(BorderFactory.createEmptyBorder(0, 10, 0, 10));
+        JButton btn = new UIUtils.RoundedButton("📅", ThemeManager.getHeaderColor(), ACCENT_COLOR, 10);
+        btn.setFont(new Font("Segoe UI", Font.PLAIN, 16));
 
         btn.addActionListener(e -> {
             LocalDate current = null;
