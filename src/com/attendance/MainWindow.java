@@ -205,11 +205,11 @@ public class MainWindow extends JFrame implements ThemeManager.ThemeChangeListen
         csvItem.setBackground(new Color(49, 50, 68));
         csvItem.setForeground(TEXT_COLOR);
         csvItem.addActionListener(ev -> ExportManager.exportCSV(this, student));
-        JMenuItem pdfItem = new JMenuItem("📑 Export as PDF");
+        JMenuItem pdfItem = new JMenuItem("📑 Export Formal Report");
         pdfItem.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         pdfItem.setBackground(new Color(49, 50, 68));
         pdfItem.setForeground(TEXT_COLOR);
-        pdfItem.addActionListener(ev -> ExportManager.exportPDF(this, student));
+        pdfItem.addActionListener(ev -> ExportManager.exportFormalReport(this, student));
         exportMenu.add(csvItem);
         exportMenu.add(pdfItem);
         exportBtn.addActionListener(ev -> exportMenu.show(exportBtn, 0, -exportMenu.getPreferredSize().height));

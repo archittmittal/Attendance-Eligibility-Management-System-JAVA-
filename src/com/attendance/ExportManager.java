@@ -9,13 +9,18 @@ import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.List;
 
+import javax.imageio.ImageIO;
+import java.awt.Desktop;
+import java.awt.Graphics2D;
+import java.awt.image.BufferedImage;
+import java.awt.RenderingHints;
+import java.awt.Color;
+import java.io.ByteArrayOutputStream;
+import java.util.Base64;
+
 /**
- * Export Manager — Handles exporting attendance data as CSV or PDF.
- * No external libraries required.
- *
- * CSV: Plain text file with headers and per-subject breakdown.
- * PDF: Uses Java's built-in printing API (java.awt.print) to render
- * formatted content to a PDF-compatible PrinterJob (or saves via Graphics2D).
+ * Export Manager — Handles exporting attendance data as CSV or HTML Formal Report.
+ * Uses Graphics2D to embed pie charts into the HTML report for visual appeal.
  */
 public class ExportManager {
 
@@ -131,33 +136,32 @@ public class ExportManager {
         }
     }
 
+    private static String escapeCSV(String field) {
+        if (field.contains(",") || field.contains("\"") || field.contains("\n")) {
+            return "\"" + field.replace("\"", "\"\"") + "\"";
+        }
+        return field;
+    }
+
     // ═══════════════════════════════════════════
-    // PDF EXPORT
+    // FORMAL HTML REPORT EXPORT
     // ═══════════════════════════════════════════
 
-    /**
-     * Export attendance data as a PDF report.
-     * Uses Java's built-in printing/graphics API to render a multi-page document.
-     *
-     * @param parent  the parent component for dialogs
-     * @param student the student whose data to export
-     */
-    public static void exportPDF(Component parent, Student student) {
+    public static void exportFormalReport(Component parent, Student student) {
         JFileChooser chooser = new JFileChooser();
-        chooser.setDialogTitle("Export Attendance as PDF");
-        chooser.setFileFilter(new FileNameExtensionFilter("PDF Files (*.pdf)", "pdf"));
-        chooser.setSelectedFile(new java.io.File("attendance_" + student.getName().replaceAll("\\s+", "_") + ".pdf"));
+        chooser.setDialogTitle("Export Formal Report");
+        chooser.setFileFilter(new FileNameExtensionFilter("HTML Document (*.html)", "html"));
+        chooser.setSelectedFile(new java.io.File(student.getName().replaceAll("\\s+", "_") + "_Attendance_Report.html"));
 
         int result = chooser.showSaveDialog(parent);
         if (result != JFileChooser.APPROVE_OPTION)
             return;
 
         java.io.File file = chooser.getSelectedFile();
-        if (!file.getName().toLowerCase().endsWith(".pdf")) {
-            file = new java.io.File(file.getAbsolutePath() + ".pdf");
+        if (!file.getName().toLowerCase().endsWith(".html")) {
+            file = new java.io.File(file.getAbsolutePath() + ".html");
         }
 
-        // Check overwrite
         if (file.exists()) {
             int confirm = JOptionPane.showConfirmDialog(parent,
                     "File already exists. Overwrite?", "Confirm",
@@ -167,237 +171,223 @@ public class ExportManager {
         }
 
         try {
-            // Generate formatted PDF report directly (no printer dependency)
-            generateFormattedReport(file, student);
-
-            JOptionPane.showMessageDialog(parent,
-                    "✅ Report exported successfully!\n" + file.getAbsolutePath(),
-                    "Export Complete", JOptionPane.INFORMATION_MESSAGE);
-
+            generateHtmlReport(file, student);
+            
+            // Try to open it
+            if (Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.BROWSE)) {
+                Desktop.getDesktop().browse(file.toURI());
+            } else {
+                JOptionPane.showMessageDialog(parent,
+                        "✅ Report exported successfully!\n" + file.getAbsolutePath() + "\n\n(Open it in any modern web browser to view your beautifully styled report)",
+                        "Export Complete", JOptionPane.INFORMATION_MESSAGE);
+            }
         } catch (Exception e) {
+            e.printStackTrace();
             JOptionPane.showMessageDialog(parent,
-                    "Error exporting report: " + e.getMessage(),
+                    "Error generating report: " + e.getMessage(),
                     "Export Error", JOptionPane.ERROR_MESSAGE);
         }
     }
 
-    /**
-     * Generate a formatted plain-text report that mimics a PDF layout.
-     * This is a reliable cross-platform approach that doesn't depend on PDF
-     * printers.
-     */
-    private static void generateFormattedReport(java.io.File file, Student student) throws IOException {
-        // Actually write as a proper text-based PDF
-        // We'll use raw PDF generation here — minimal but valid PDF
-        try (OutputStream os = new FileOutputStream(file)) {
-            PDFWriter pdf = new PDFWriter(os);
-            pdf.begin();
+    private static void generateHtmlReport(java.io.File file, Student student) throws IOException {
+        int totalAttended = 0, totalConducted = 0;
+        for (Subject s : student.getSubjects()) {
+            totalAttended += s.getClassesAttended();
+            totalConducted += s.getClassesConducted();
+        }
+        double overallPct = (totalConducted == 0) ? 100.0 : (double) totalAttended / totalConducted * 100.0;
 
-            // Title
-            pdf.addLine("ATTENDANCE REPORT", 18, true);
-            pdf.addLine("", 12, false);
+        // Generate Base64 Pie Chart
+        String base64Chart = generateOverallPieChartBase64(totalAttended, totalConducted - totalAttended);
 
-            // Student info
-            pdf.addLine("Student: " + student.getName(), 12, false);
-            pdf.addLine("Username: " + student.getUsername(), 12, false);
-            pdf.addLine("Generated: " + LocalDate.now(), 12, false);
-            if (student.isSemesterConfigured()) {
-                pdf.addLine("Semester: " + student.getSemesterStartDate() + " to " + student.getSemesterEndDate(), 12,
-                        false);
+        StringBuilder html = new StringBuilder();
+        html.append("<!DOCTYPE html>\n<html>\n<head>\n<meta charset=\"UTF-8\">\n<title>Official Academic Report</title>\n");
+        // CSS Styling...
+        html.append("<style>\n");
+        html.append("body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background-color: #f1f3f5; color: #1e293b; margin: 0; padding: 40px; }\n");
+        html.append(".container { max-width: 900px; margin: 0 auto; background: #ffffff; padding: 50px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.08); }\n");
+        html.append(".header { text-align: center; border-bottom: 3px solid #1e3a8a; padding-bottom: 25px; margin-bottom: 35px; }\n");
+        html.append(".header h1 { color: #1e3a8a; margin: 0 0 8px 0; font-size: 32px; text-transform: uppercase; letter-spacing: 2px; font-weight: 800; }\n");
+        html.append(".header p { color: #64748b; margin: 4px 0; font-size: 15px; font-weight: 500; }\n");
+        html.append(".info-section { display: flex; justify-content: space-between; gap: 20px; margin-bottom: 40px; }\n");
+        html.append(".info-box { background: #f8fafc; padding: 25px; border-radius: 10px; flex: 1; border: 1px solid #e2e8f0; }\n");
+        html.append(".info-box h3 { margin: 0 0 15px 0; color: #0f172a; font-size: 17px; border-bottom: 2px solid #cbd5e1; padding-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px; }\n");
+        html.append(".info-box p { margin: 8px 0; font-size: 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed #e2e8f0; padding-bottom: 5px; }\n");
+        html.append(".info-box p:last-child { border-bottom: none; padding-bottom: 0; margin-bottom: 0; }\n");
+        html.append(".chart-container { text-align: center; margin: 40px 0; background: #f8fafc; padding: 30px; border-radius: 16px; border: 1px dashed #cbd5e1; }\n");
+        html.append(".chart-container h3 { color: #0f172a; margin-top: 0; margin-bottom: 20px; font-size: 18px; text-transform: uppercase; letter-spacing: 1px; }\n");
+        html.append(".chart-container img { max-width: 100%; height: auto; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }\n");
+        html.append(".table-title { color: #1e3a8a; border-bottom: 3px solid #e2e8f0; padding-bottom: 10px; font-size: 20px; margin-top: 50px; text-transform: uppercase; font-weight: 700; }\n");
+        html.append("table { width: 100%; border-collapse: separate; border-spacing: 0; margin-top: 20px; border-radius: 8px; overflow: hidden; border: 1px solid #e2e8f0; }\n");
+        html.append("th, td { padding: 15px 18px; text-align: left; border-bottom: 1px solid #e2e8f0; }\n");
+        html.append("th { background-color: #1e3a8a; color: white; font-weight: 600; text-transform: uppercase; font-size: 13px; letter-spacing: 1.2px; }\n");
+        html.append("tr:last-child td { border-bottom: none; }\n");
+        html.append("tr:hover { background-color: #f1f5f9; }\n");
+        html.append(".status-safe { color: #065f46; font-weight: 700; background: #a7f3d0; padding: 6px 12px; border-radius: 20px; font-size: 12px; text-transform: uppercase; display: inline-block; }\n");
+        html.append(".status-danger { color: #991b1b; font-weight: 700; background: #fecaca; padding: 6px 12px; border-radius: 20px; font-size: 12px; text-transform: uppercase; display: inline-block; }\n");
+        html.append(".footer { text-align: center; margin-top: 60px; color: #94a3b8; font-size: 13px; border-top: 1px solid #e2e8f0; padding-top: 30px; }\n");
+        html.append("@media print { \n");
+        html.append("  body { background-color: #ffffff; padding: 0; font-size: 12pt; }\n");
+        html.append("  .container { box-shadow: none; padding: 0; max-width: 100%; }\n");
+        html.append("  .chart-container { background: none; border: none; padding: 10px; }\n");
+        html.append("  .info-box { background: none; border: 1px solid #ccc; }\n");
+        html.append("}\n");
+        html.append("</style>\n</head>\n<body>\n");
+
+        html.append("<div class=\"container\">\n");
+        
+        // Header
+        html.append("<div class=\"header\">\n");
+        html.append("<h1>Official Academic Report</h1>\n");
+        html.append("<p>Attendance & Eligibility Management System</p>\n");
+        html.append("<p>Generated on " + LocalDate.now() + "</p>\n");
+        html.append("</div>\n");
+
+        // Info Section
+        html.append("<div class=\"info-section\">\n");
+        html.append("<div class=\"info-box\">\n");
+        html.append("<h3>Student Information</h3>\n");
+        html.append("<p><span>Full Name</span> <strong>" + escapeHTML(student.getName()) + "</strong></p>\n");
+        html.append("<p><span>Registration / Username</span> <strong>" + escapeHTML(student.getUsername()) + "</strong></p>\n");
+        if (student.isSemesterConfigured()) {
+            html.append("<p><span>Semester Window</span> <strong>" + student.getSemesterStartDate() + " to " + student.getSemesterEndDate() + "</strong></p>\n");
+        }
+        html.append("</div>\n");
+
+        html.append("<div class=\"info-box\">\n");
+        html.append("<h3>Overall Attendance Summary</h3>\n");
+        html.append("<p><span>Total Attended</span> <strong>" + totalAttended + " classes</strong></p>\n");
+        html.append("<p><span>Total Conducted</span> <strong>" + totalConducted + " classes</strong></p>\n");
+        html.append("<p><span>Cumulative Percentage</span> <strong style=\"color: #1e3a8a; font-size: 18px;\">" + String.format("%.2f%%", overallPct) + "</strong></p>\n");
+        html.append("</div>\n");
+        html.append("</div>\n");
+
+        // Chart
+        if (base64Chart != null) {
+            html.append("<div class=\"chart-container\">\n");
+            html.append("<h3>Attendance Distribution Overlay</h3>\n");
+            html.append("<img src=\"data:image/png;base64," + base64Chart + "\" alt=\"Overall Attendance Chart\">\n");
+            html.append("</div>\n");
+        }
+
+        // Table
+        html.append("<h3 class=\"table-title\">Subject-wise Integrity Breakdown</h3>\n");
+        html.append("<table>\n");
+        html.append("<tr><th>Subject</th><th>Att.</th><th>Cond.</th><th>Percentage</th><th>Eligibility Status</th><th>Actionable Notes</th></tr>\n");
+
+        for (Subject s : student.getSubjects()) {
+            double pct = s.getAttendancePercentage();
+            String statusClass = pct >= 75.0 ? "status-safe" : "status-danger";
+            String statusText = pct >= 75.0 ? "Eligible" : "Critical (< 75%)";
+            
+            String notes = "-";
+            if (pct >= 75.0) {
+                int safeBunks = s.calculateSafeBunks(75.0);
+                if (safeBunks > 0) notes = "<strong>" + safeBunks + "</strong> Safe Bunk" + (safeBunks > 1 ? "s" : "");
+            } else {
+                int needed = s.calculateClassesNeeded(75.0);
+                notes = "Attend next <strong>" + needed + "</strong> class" + (needed > 1 ? "es" : "");
             }
-            pdf.addLine("", 12, false);
 
-            // Overall stats
-            int totalAttended = 0, totalConducted = 0;
-            for (Subject s : student.getSubjects()) {
-                totalAttended += s.getClassesAttended();
-                totalConducted += s.getClassesConducted();
-            }
-            double overallPct = (totalConducted == 0) ? 100.0 : (double) totalAttended / totalConducted * 100.0;
-            pdf.addLine("Overall Attendance: " + totalAttended + "/" + totalConducted
-                    + " (" + String.format("%.1f%%", overallPct) + ")", 14, true);
-            pdf.addLine("", 12, false);
+            html.append("<tr>");
+            html.append("<td><strong>").append(escapeHTML(s.getName())).append("</strong></td>");
+            html.append("<td>").append(s.getClassesAttended()).append("</td>");
+            html.append("<td>").append(s.getClassesConducted()).append("</td>");
+            html.append("<td><strong>").append(String.format("%.1f%%", pct)).append("</strong></td>");
+            html.append("<td><span class=\"").append(statusClass).append("\">").append(statusText).append("</span></td>");
+            html.append("<td><span style=\"font-size: 13.5px; color: #475569;\">").append(notes).append("</span></td>");
+            html.append("</tr>\n");
+        }
+        
+        html.append("</table>\n");
 
-            // Per-subject table
-            pdf.addLine("PER-SUBJECT BREAKDOWN", 14, true);
-            pdf.addLine("--------------------------------------------------", 10, false);
-            pdf.addLine(String.format("%-20s %8s %8s %8s %8s", "Subject", "Attended", "Conducted", "Pct", "Eligible"),
-                    10, false);
-            pdf.addLine("--------------------------------------------------", 10, false);
-            for (Subject s : student.getSubjects()) {
-                pdf.addLine(String.format("%-20s %8d %8d %7.1f%% %8s",
-                        truncate(s.getName(), 20),
-                        s.getClassesAttended(),
-                        s.getClassesConducted(),
-                        s.getAttendancePercentage(),
-                        s.getAttendancePercentage() >= 75 ? "Yes" : "No"), 10, false);
-            }
-            pdf.addLine("--------------------------------------------------", 10, false);
-            pdf.addLine("", 12, false);
+        // Footer
+        html.append("<div class=\"footer\">\n");
+        html.append("<p>This is a system-generated document and requires no physical signature. Designed natively with the Premium Academic Theme.</p>\n");
+        html.append("<p><strong>Attendance & Eligibility Management System</strong> &copy; " + LocalDate.now().getYear() + "</p>\n");
+        html.append("</div>\n");
 
-            // Detailed records
-            pdf.addLine("DETAILED ATTENDANCE RECORDS", 14, true);
-            pdf.addLine(String.format("%-12s %-5s %-20s %-8s", "Date", "Day", "Subject", "Status"), 10, false);
-            pdf.addLine("--------------------------------------------------", 10, false);
+        html.append("</div>\n</body>\n</html>");
 
-            List<String[]> allRecords = new ArrayList<>();
-            for (Subject s : student.getSubjects()) {
-                for (AttendanceRecord record : s.getAttendanceHistory()) {
-                    if (record.getDate() != null) {
-                        allRecords.add(new String[] {
-                                record.getDate().format(DATE_FMT),
-                                record.getDate().getDayOfWeek().toString().substring(0, 3),
-                                s.getName(),
-                                record.isPresent() ? "Present" : "Absent"
-                        });
-                    }
-                }
-            }
-            allRecords.sort((a, b) -> {
-                int cmp = a[0].compareTo(b[0]);
-                return cmp != 0 ? cmp : a[2].compareTo(b[2]);
-            });
-
-            for (String[] row : allRecords) {
-                pdf.addLine(String.format("%-12s %-5s %-20s %-8s",
-                        row[0], row[1], truncate(row[2], 20), row[3]), 10, false);
-            }
-
-            pdf.end();
+        try (PrintWriter writer = new PrintWriter(new BufferedWriter(new FileWriter(file)))) {
+            writer.write(html.toString());
         }
     }
 
-    /**
-     * Escape a CSV field (quote if it contains commas or quotes).
-     */
-    private static String escapeCSV(String field) {
-        if (field.contains(",") || field.contains("\"") || field.contains("\n")) {
-            return "\"" + field.replace("\"", "\"\"") + "\"";
+    private static String generateOverallPieChartBase64(int attended, int absent) {
+        if (attended == 0 && absent == 0) return null;
+        
+        int width = 800;
+        int height = 500;
+        BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+        Graphics2D g2d = image.createGraphics();
+        
+        g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        g2d.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_LCD_HRGB);
+        
+        // Clear background with transparent or white
+        g2d.setColor(new Color(248, 250, 252)); // match chart-container background
+        g2d.fillRect(0, 0, width, height);
+        
+        int total = attended + absent;
+        int presentAngle = (int) Math.round((attended * 360.0) / total);
+        int absentAngle = 360 - presentAngle;
+        
+        int cx = 250;
+        int cy = 250;
+        int radius = 180;
+        
+        // Present Slice (Emerald Green)
+        g2d.setColor(new Color(5, 150, 105));
+        g2d.fillArc(cx - radius, cy - radius, radius * 2, radius * 2, 90, -presentAngle);
+        
+        // Absent Slice (Crimson Red)
+        g2d.setColor(new Color(220, 38, 38));
+        g2d.fillArc(cx - radius, cy - radius, radius * 2, radius * 2, 90 - presentAngle, -absentAngle);
+        
+        // Draw Legend
+        int legendX = cx + radius + 80;
+        int legendY = cy - 40;
+        
+        g2d.setFont(new java.awt.Font("Segoe UI", java.awt.Font.BOLD, 22));
+        
+        // Present Legend
+        g2d.setColor(new Color(5, 150, 105));
+        g2d.fillRoundRect(legendX, legendY, 25, 25, 8, 8);
+        g2d.setColor(new Color(15, 23, 42));
+        g2d.drawString("Present (" + attended + ")", legendX + 40, legendY + 20);
+        
+        // Absent Legend
+        legendY += 50;
+        g2d.setColor(new Color(220, 38, 38));
+        g2d.fillRoundRect(legendX, legendY, 25, 25, 8, 8);
+        g2d.setColor(new Color(15, 23, 42));
+        g2d.drawString("Absent (" + absent + ")", legendX + 40, legendY + 20);
+        
+        g2d.dispose();
+
+        try {
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            ImageIO.write(image, "png", baos);
+            byte[] imageBytes = baos.toByteArray();
+            return Base64.getEncoder().encodeToString(imageBytes);
+        } catch (IOException e) {
+            return null;
         }
-        return field;
     }
 
-    /**
-     * Truncate a string to maxLen characters.
-     */
-    private static String truncate(String s, int maxLen) {
-        return s.length() > maxLen ? s.substring(0, maxLen - 2) + ".." : s;
-    }
-
-    /**
-     * Minimal PDF writer — generates valid PDF 1.4 files without external
-     * dependencies.
-     * Writes simple single-page text content using Helvetica font.
-     */
-    private static class PDFWriter {
-        private final OutputStream out;
-        private final List<String> textLines = new ArrayList<>();
-        private final List<int[]> fontSpecs = new ArrayList<>(); // [fontSize, bold]
-
-        PDFWriter(OutputStream out) {
-            this.out = out;
-        }
-
-        void addLine(String text, int fontSize, boolean bold) {
-            textLines.add(text);
-            fontSpecs.add(new int[] { fontSize, bold ? 1 : 0 });
-        }
-
-        void begin() {
-            // Nothing to do here
-        }
-
-        void end() throws IOException {
-            // Build PDF content
-            StringBuilder content = new StringBuilder();
-            content.append("BT\n");
-
-            int y = 750; // Start from top (absolute position for first line)
-            boolean firstLine = true;
-            int prevY = 0;
-            for (int i = 0; i < textLines.size(); i++) {
-                int fontSize = fontSpecs.get(i)[0];
-                boolean bold = fontSpecs.get(i)[1] == 1;
-                String fontName = bold ? "/F2" : "/F1";
-
-                content.append(fontName).append(" ").append(fontSize).append(" Tf\n");
-                if (firstLine) {
-                    // First line: absolute position
-                    content.append("36 ").append(y).append(" Td\n");
-                    firstLine = false;
-                } else {
-                    // Subsequent lines: relative displacement from previous position
-                    int dy = y - prevY;
-                    content.append("0 ").append(dy).append(" Td\n");
-                }
-                content.append("(").append(escapePDF(textLines.get(i))).append(") Tj\n");
-
-                prevY = y;
-                y -= (fontSize + 4);
-                if (y < 50)
-                    break; // Page boundary
+    private static String escapeHTML(String s) {
+        StringBuilder out = new StringBuilder(Math.max(16, s.length()));
+        for (int i = 0; i < s.length(); i++) {
+            char c = s.charAt(i);
+            if (c > 127 || c == '"' || c == '<' || c == '>' || c == '&') {
+                out.append("&#");
+                out.append((int) c);
+                out.append(';');
+            } else {
+                out.append(c);
             }
-            content.append("ET\n");
-
-            String stream = content.toString();
-            byte[] streamBytes = stream.getBytes("ISO-8859-1");
-
-            // PDF structure
-            StringBuilder pdf = new StringBuilder();
-            List<Integer> offsets = new ArrayList<>();
-
-            // Header
-            pdf.append("%PDF-1.4\n");
-
-            // Object 1: Catalog
-            offsets.add(pdf.length());
-            pdf.append("1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n");
-
-            // Object 2: Pages
-            offsets.add(pdf.length());
-            pdf.append("2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n");
-
-            // Object 3: Page
-            offsets.add(pdf.length());
-            pdf.append("3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] ");
-            pdf.append("/Contents 4 0 R /Resources << /Font << /F1 5 0 R /F2 6 0 R >> >> >>\nendobj\n");
-
-            // Object 4: Content stream
-            offsets.add(pdf.length());
-            pdf.append("4 0 obj\n<< /Length ").append(streamBytes.length).append(" >>\nstream\n");
-            pdf.append(stream);
-            pdf.append("endstream\nendobj\n");
-
-            // Object 5: Font (Helvetica)
-            offsets.add(pdf.length());
-            pdf.append("5 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>\nendobj\n");
-
-            // Object 6: Font (Helvetica-Bold)
-            offsets.add(pdf.length());
-            pdf.append("6 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>\nendobj\n");
-
-            // Cross-reference table
-            int xrefOffset = pdf.length();
-            pdf.append("xref\n");
-            pdf.append("0 ").append(offsets.size() + 1).append("\n");
-            pdf.append("0000000000 65535 f \n");
-            for (int offset : offsets) {
-                pdf.append(String.format("%010d 00000 n \n", offset));
-            }
-
-            // Trailer
-            pdf.append("trailer\n<< /Size ").append(offsets.size() + 1);
-            pdf.append(" /Root 1 0 R >>\n");
-            pdf.append("startxref\n").append(xrefOffset).append("\n%%EOF\n");
-
-            out.write(pdf.toString().getBytes("ISO-8859-1"));
         }
-
-        private static String escapePDF(String text) {
-            return text.replace("\\", "\\\\")
-                    .replace("(", "\\(")
-                    .replace(")", "\\)")
-                    .replace("%", "");
-        }
+        return out.toString();
     }
 }

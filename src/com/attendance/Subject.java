@@ -131,12 +131,44 @@ public class Subject {
         }
     }
 
-    // ── Percentage ──
+    // ── Percentage & Analytics ──
     public double getAttendancePercentage() {
         int conducted = getClassesConducted();
         if (conducted == 0)
             return 100.0;
         return (double) getClassesAttended() / conducted * 100.0;
+    }
+
+    public int calculateSafeBunks(double targetPercentage) {
+        int attended = getClassesAttended();
+        int conducted = getClassesConducted();
+        if (conducted == 0) return 0;
+
+        int safeBunks = 0;
+        while (true) {
+            double simulatedPct = (double) attended / (conducted + safeBunks + 1) * 100.0;
+            if (simulatedPct >= targetPercentage) {
+                safeBunks++;
+            } else {
+                break;
+            }
+        }
+        return safeBunks;
+    }
+
+    public int calculateClassesNeeded(double targetPercentage) {
+        int attended = getClassesAttended();
+        int conducted = getClassesConducted();
+        
+        int needed = 0;
+        while (true) {
+            double currentPct = (conducted + needed) == 0 ? 100.0 : ((double) (attended + needed) / (conducted + needed)) * 100.0;
+            if (currentPct >= targetPercentage) {
+                break;
+            }
+            needed++;
+        }
+        return needed;
     }
 
     // ── History ──
