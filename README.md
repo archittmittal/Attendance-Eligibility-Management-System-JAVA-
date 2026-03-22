@@ -311,6 +311,7 @@ This project is developed as part of an academic Project-Based Learning (PBL) in
 ## 👥 Contributors
 
 - **Archit Mittal** - Project Lead & Developer
+- **Aviral Mittal** - Contributor
 
 ## 🤝 Contributing
 
