@@ -109,6 +109,19 @@ public class DatabaseManager {
             } catch (SQLException ignored) {
                 // Column already exists — safe to ignore
             }
+            // Add email columns (migration for existing DBs)
+            try {
+                stmt.executeUpdate(
+                        "ALTER TABLE students ADD COLUMN email VARCHAR(200) DEFAULT NULL");
+            } catch (SQLException ignored) {}
+            try {
+                stmt.executeUpdate(
+                        "ALTER TABLE students ADD COLUMN email_frequency VARCHAR(10) DEFAULT 'off'");
+            } catch (SQLException ignored) {}
+            try {
+                stmt.executeUpdate(
+                        "ALTER TABLE students ADD COLUMN last_email_sent DATE DEFAULT NULL");
+            } catch (SQLException ignored) {}
         } catch (SQLException e) {
             System.err.println("Error initializing tables: " + e.getMessage());
         }
@@ -183,6 +196,14 @@ public class DatabaseManager {
                     d = rs.getDate("last_teaching_day");
                     if (d != null)
                         student.setSemesterEndDate(d.toLocalDate());
+
+                    // Load email settings
+                    student.setEmail(rs.getString("email"));
+                    String freq = rs.getString("email_frequency");
+                    student.setEmailFrequency(freq != null ? freq : "off");
+                    Date lastEmail = rs.getDate("last_email_sent");
+                    if (lastEmail != null)
+                        student.setLastEmailSent(lastEmail.toLocalDate());
 
                     // Auto-upgrade legacy unsalted hash to salted
                     if (PasswordValidator.isLegacyHash(storedHash)) {
@@ -737,6 +758,41 @@ public class DatabaseManager {
             pstmt.executeUpdate();
         } catch (SQLException e) {
             System.err.println("Error saving theme: " + e.getMessage());
+        }
+    }
+
+    // ══════════════════════════════════════════════
+    // EMAIL SETTINGS
+    // ══════════════════════════════════════════════
+
+    /**
+     * Save email settings for a student.
+     */
+    public void saveEmailSettings(Student student) {
+        String sql = "UPDATE students SET email = ?, email_frequency = ? WHERE id = ?";
+        try (Connection conn = getConnection();
+                PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, student.getEmail());
+            pstmt.setString(2, student.getEmailFrequency());
+            pstmt.setInt(3, student.getId());
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            System.err.println("Error saving email settings: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Update the last email sent date for a student.
+     */
+    public void updateLastEmailSent(int studentId, LocalDate date) {
+        String sql = "UPDATE students SET last_email_sent = ? WHERE id = ?";
+        try (Connection conn = getConnection();
+                PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setDate(1, Date.valueOf(date));
+            pstmt.setInt(2, studentId);
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            System.err.println("Error updating last email sent: " + e.getMessage());
         }
     }
 }

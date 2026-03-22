@@ -21,6 +21,11 @@ public class Student {
     private LocalDate midsemExamEndDate; // Classes resume
     private LocalDate semesterEndDate; // Last teaching day (before end-sem exams)
 
+    // Email report fields
+    private String email;
+    private String emailFrequency = "off"; // off, weekly, monthly
+    private LocalDate lastEmailSent;
+
     public Student(String name) {
         this.name = name;
         this.subjects = new ArrayList<>();
@@ -160,5 +165,30 @@ public class Student {
             return false;
         }
         return !date.isBefore(midsemExamStartDate) && !date.isAfter(midsemExamEndDate);
+    }
+
+    // ── Email Report Settings ──
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
+    }
+
+    public String getEmailFrequency() {
+        return emailFrequency;
+    }
+
+    public void setEmailFrequency(String emailFrequency) {
+        this.emailFrequency = emailFrequency;
+    }
+
+    public LocalDate getLastEmailSent() {
+        return lastEmailSent;
+    }
+
+    public void setLastEmailSent(LocalDate lastEmailSent) {
+        this.lastEmailSent = lastEmailSent;
     }
 }

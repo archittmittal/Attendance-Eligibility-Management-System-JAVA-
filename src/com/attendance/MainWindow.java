@@ -191,6 +191,9 @@ public class MainWindow extends JFrame implements ThemeManager.ThemeChangeListen
         exportBtn.addActionListener(ev -> exportMenu.show(exportBtn, 0, -exportMenu.getPreferredSize().height));
         footerPanel.add(exportBtn);
 
+        footerPanel.add(createFooterButton("📊 Summary & Charts",
+                e -> DetailedSummaryExport.generateInstantReport(this, student)));
+
         footerPanel.add(createFooterButton("🔑 Change Password",
                 e -> showChangePasswordDialog()));
 
