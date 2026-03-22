@@ -8,7 +8,7 @@ public class DatabaseConfig {
     // JDBC Connection Parameters
     public static final String DB_URL = "jdbc:mysql://localhost:3306/attendance_system";
     public static final String DB_USER = "root";
-    public static final String DB_PASSWORD = "Archit@123";
+    public static final String DB_PASSWORD = "";
 
     // Connection Pool Settings
     public static final int MAX_RETRIES = 3;
