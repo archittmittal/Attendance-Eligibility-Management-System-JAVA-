@@ -19,6 +19,7 @@ public class MainWindow extends JFrame implements ThemeManager.ThemeChangeListen
     private JPanel summaryPanel;
     private WeeklySchedule schedule;
     private JPanel undoPanel; // Toast bar for undo
+    private JPanel todaySchedulePanel; // Quick-Mark widget for today's classes
     private javax.swing.Timer undoTimer; // Auto-dismiss timer
 
     // Colors — now resolved dynamically via ThemeManager
@@ -137,11 +138,24 @@ public class MainWindow extends JFrame implements ThemeManager.ThemeChangeListen
         // Initialize Undo Panel
         initializeUndoPanel();
 
-        // Wrapper for Summary + Undo to sit at the top
-        JPanel topContainer = new JPanel(new BorderLayout());
+        // ── Today's Schedule Panel ──
+        todaySchedulePanel = new JPanel();
+        todaySchedulePanel.setLayout(new FlowLayout(FlowLayout.CENTER, 10, 5));
+        todaySchedulePanel.setBackground(BG_COLOR);
+        todaySchedulePanel.setBorder(BorderFactory.createEmptyBorder(0, 20, 10, 20));
+
+        // Wrapper for Summary + Undo + Today's Schedule to sit at the top
+        JPanel topContainer = new JPanel();
+        topContainer.setLayout(new BoxLayout(topContainer, BoxLayout.Y_AXIS));
         topContainer.setBackground(BG_COLOR);
-        topContainer.add(summaryPanel, BorderLayout.CENTER);
-        topContainer.add(undoPanel, BorderLayout.SOUTH); // Undo bar appears below summary
+        
+        JPanel summaryWrapper = new JPanel(new FlowLayout(FlowLayout.CENTER, 0, 0));
+        summaryWrapper.setBackground(BG_COLOR);
+        summaryWrapper.add(summaryPanel);
+        
+        topContainer.add(summaryWrapper);
+        topContainer.add(todaySchedulePanel);
+        topContainer.add(undoPanel); // Undo bar appears below today's schedule
 
         JPanel centerPanel = new JPanel(new BorderLayout());
         centerPanel.setBackground(BG_COLOR);
@@ -248,6 +262,34 @@ public class MainWindow extends JFrame implements ThemeManager.ThemeChangeListen
 
         summaryPanel.revalidate();
         summaryPanel.repaint();
+
+        // ── Today's Schedule Cards ──
+        todaySchedulePanel.removeAll();
+        DayOfWeek today = LocalDate.now().getDayOfWeek();
+        List<Subject> todaySubjects = schedule.getSubjectsOn(today);
+
+        if (todaySubjects != null && !todaySubjects.isEmpty()) {
+            JLabel scheduleLabel = new JLabel("📅 Today:");
+            scheduleLabel.setFont(new Font("Segoe UI", Font.BOLD, 14));
+            scheduleLabel.setForeground(ACCENT_COLOR);
+            scheduleLabel.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 5));
+            todaySchedulePanel.add(scheduleLabel);
+
+            for (Subject s : todaySubjects) {
+                // Ensure the subject still exists in the student's list
+                boolean exists = student.getSubjects().stream().anyMatch(sub -> sub.getId() == s.getId());
+                if (exists) {
+                    todaySchedulePanel.add(createMiniSubjectCard(s));
+                }
+            }
+        } else {
+            JLabel noClassesLabel = new JLabel("🎉 No classes scheduled for today! Enjoy!");
+            noClassesLabel.setFont(new Font("Segoe UI", Font.ITALIC, 14));
+            noClassesLabel.setForeground(SUBTEXT_COLOR);
+            todaySchedulePanel.add(noClassesLabel);
+        }
+        todaySchedulePanel.revalidate();
+        todaySchedulePanel.repaint();
 
         // ── Subject Cards ──
         subjectsPanel.removeAll();
@@ -444,6 +486,40 @@ public class MainWindow extends JFrame implements ThemeManager.ThemeChangeListen
         // We need to find the centerPanel which holds the summary and subjects
         // In constructor: centerPanel.add(summaryPanel, BorderLayout.NORTH);
         // We will inject a wrapper panel in the constructor instead to hold this.
+    }
+
+    private JPanel createMiniSubjectCard(Subject subject) {
+        JPanel card = new JPanel(new BorderLayout());
+        card.setBackground(SURFACE);
+        card.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(HEADER_COLOR, 1),
+                BorderFactory.createEmptyBorder(6, 12, 6, 12)));
+        
+        JLabel nameLabel = new JLabel(subject.getName());
+        nameLabel.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        nameLabel.setForeground(TEXT_COLOR);
+        nameLabel.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 15));
+        
+        JPanel actionsPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 5, 0));
+        actionsPanel.setOpaque(false);
+        
+        JButton attendedBtn = new UIUtils.RoundedButton("✅", GREEN, HEADER_COLOR, 8);
+        attendedBtn.setFont(new Font("Segoe UI", Font.BOLD, 11));
+        attendedBtn.setToolTipText("Mark Present");
+        attendedBtn.addActionListener(e -> markAttendance(subject, true));
+        
+        JButton missedBtn = new UIUtils.RoundedButton("❌", RED, HEADER_COLOR, 8);
+        missedBtn.setFont(new Font("Segoe UI", Font.BOLD, 11));
+        missedBtn.setToolTipText("Mark Absent");
+        missedBtn.addActionListener(e -> markAttendance(subject, false));
+        
+        actionsPanel.add(attendedBtn);
+        actionsPanel.add(missedBtn);
+        
+        card.add(nameLabel, BorderLayout.CENTER);
+        card.add(actionsPanel, BorderLayout.EAST);
+        
+        return card;
     }
 
     // Temporary storage for undo
