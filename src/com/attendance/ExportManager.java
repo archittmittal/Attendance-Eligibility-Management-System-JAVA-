@@ -30,13 +30,6 @@ public class ExportManager {
     // CSV EXPORT
     // ═══════════════════════════════════════════
 
-    /**
-     * Export attendance data as CSV for the given student.
-     * Opens a JFileChooser for the user to pick a save location.
-     *
-     * @param parent  the parent component for dialogs
-     * @param student the student whose data to export
-     */
     public static void exportCSV(Component parent, Student student) {
         JFileChooser chooser = new JFileChooser();
         chooser.setDialogTitle("Export Attendance as CSV");

@@ -927,8 +927,7 @@ public class MainWindow extends JFrame implements ThemeManager.ThemeChangeListen
 
             // Verify current password
             String storedHash = DatabaseManager.getInstance().getPasswordHash(student.getId());
-            String oldHash = PasswordValidator.hashPassword(oldPw);
-            if (!oldHash.equals(storedHash)) {
+            if (!PasswordValidator.checkPassword(oldPw, storedHash)) {
                 statusLabel.setText("Current password is incorrect.");
                 return;
             }
