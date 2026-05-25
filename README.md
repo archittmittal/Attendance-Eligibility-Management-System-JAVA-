@@ -227,24 +227,24 @@ public static final String DB_PASSWORD = "your_password";
 #### macOS / Linux:
 ```bash
 # Compile
-javac -cp "lib/mysql-connector-j-9.1.0.jar:src" -d out src/com/attendance/*.java
+javac -cp "lib/*:src" -d out src/com/attendance/*.java
 
 # Run
-java -cp "lib/mysql-connector-j-9.1.0.jar:out" com.attendance.AttendanceApp
+java -cp "lib/*:out" com.attendance.AttendanceApp
 ```
 
 #### Windows (CMD):
 ```cmd
 :: Compile
-javac -cp "lib\mysql-connector-j-9.1.0.jar;src" -d out src\com\attendance\*.java
+javac -cp "lib\*;src" -d out src\com\attendance\*.java
 
 :: Run
-java -cp "lib\mysql-connector-j-9.1.0.jar;out" com.attendance.AttendanceApp
+java -cp "lib\*;out" com.attendance.AttendanceApp
 ```
 
 #### One-liner (macOS / Linux):
 ```bash
-javac -cp "lib/mysql-connector-j-9.1.0.jar:src" -d out src/com/attendance/*.java && java -cp "lib/mysql-connector-j-9.1.0.jar:out" com.attendance.AttendanceApp
+javac -cp "lib/*:src" -d out src/com/attendance/*.java && java -cp "lib/*:out" com.attendance.AttendanceApp
 ```
 
 ### Step 4: Using VSCode (Recommended)

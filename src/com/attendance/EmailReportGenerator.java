@@ -14,14 +14,7 @@ public class EmailReportGenerator {
 
     private static final DateTimeFormatter DATE_FMT = DateTimeFormatter.ofPattern("dd MMM yyyy");
 
-    /**
-     * Send an attendance report email to the specified recipient.
-     *
-     * @param recipientEmail the email to send to
-     * @param subject        the email subject line
-     * @param student        the student whose data to report
-     * @return true if sent successfully
-     */
+
     public static boolean sendReport(String recipientEmail, String subject, Student student) {
         String htmlBody = generateHtmlReport(student);
         return sendEmail(recipientEmail, subject, htmlBody);

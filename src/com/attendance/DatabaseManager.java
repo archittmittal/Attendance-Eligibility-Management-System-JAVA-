@@ -155,15 +155,6 @@ public class DatabaseManager {
         return -1;
     }
 
-    /**
-     * Authenticate a student by username and plaintext password.
-     * Fetches the stored hash, then verifies in Java (supports salted hashes).
-     * Automatically upgrades legacy unsalted hashes on successful login.
-     *
-     * @param username the username
-     * @param password the plaintext password (NOT a hash)
-     * @return a fully loaded Student object, or null if login fails
-     */
     public Student authenticateStudent(String username, String password) {
         String sql = "SELECT * FROM students WHERE username = ?";
         try (Connection conn = getConnection();
